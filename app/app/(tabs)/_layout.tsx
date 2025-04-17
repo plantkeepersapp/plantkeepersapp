@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Keyboard, Platform } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -10,6 +10,17 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const [tabVisible, setTabVisible] = useState(true);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setTabVisible(false));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setTabVisible(true));
+
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   return (
     <Tabs
@@ -18,13 +29,15 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
+        tabBarStyle: [
+          Platform.select({
+            ios: {
+              position: 'absolute',
+            },
+            default: {},
+          }),
+          !tabVisible && { display: 'none' },
+        ],
       }}>
       <Tabs.Screen
         name="index"
@@ -34,10 +47,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="profile"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
         }}
       />
     </Tabs>
