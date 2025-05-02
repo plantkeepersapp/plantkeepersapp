@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from .models import Plant, PlantCare, WateringSchedule, AdImpression, AdClick
+from .models import Plant, PlantCare, WateringSchedule, AdImpression, AdClick, UserPlant, User
+from rest_framework.validators import UniqueValidator
+
 
 class PlantCareSerializer(serializers.ModelSerializer):
     class Meta:
@@ -44,3 +46,34 @@ class PlantCareSummarySerializer(serializers.Serializer):
     light_needs = serializers.CharField(required=False)
     summary = serializers.CharField(required=False)
     tips = serializers.ListField(child=serializers.CharField(), required=False)
+
+class UserPlantSerializer(serializers.ModelSerializer):
+    plant_name = serializers.ReadOnlyField(source='plant.name')
+    
+    class Meta:
+        model = UserPlant
+        fields = ['id', 'user', 'plant', 'plant_name', 'added', 'last_watered', 'last_fertilized']
+        read_only_fields = ['added']
+
+class UserSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        required=True,
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
+
+    email = serializers.EmailField(
+        required=False,
+        allow_null=True,
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'birthname',   # Optional read-only field
+            'username',
+            'email',      # Optional read-only field
+            'createdat',
+        ]
+        read_only_fields = ['createdat']

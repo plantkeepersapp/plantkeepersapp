@@ -32,11 +32,38 @@ class PlantCare(models.Model):
     def __str__(self):
         return f"Care for {self.plant.name}"
 
+class User(models.Model):
+    """
+    Model for User tracing, with enforcing the uniqueness of username and email
+    """
+    birthname = models.TextField(blank=True, null=True)
+    username = models.TextField(blank=True, null=True, unique=True)
+    email = models.EmailField(blank=True, null=True, unique=True)
+    createdat = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.username}"
+
+class UserPlant(models.Model):
+    """
+    Model for tracking user's plants.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_plants')
+    plant = models.ForeignKey(Plant, on_delete=models.CASCADE, related_name='user_plants')
+    added = models.DateField(auto_now_add=True)
+    last_watered = models.DateField(blank=True, null=True)
+    last_fertilized = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s {self.plant.name}"
+
+
+
 class WateringSchedule(models.Model):
     """
-    Model for tracking plant watering schedules.
+    Model for tracking user plant watering schedules.
     """
-    plant = models.ForeignKey(Plant, on_delete=models.CASCADE, related_name='watering_schedules')
+    user = models.ForeignKey(UserPlant, on_delete=models.CASCADE, related_name='watering_schedules')
     last_watered = models.DateTimeField(default=timezone.now)
     next_watering_due = models.DateTimeField()
     is_watered = models.BooleanField(default=False)

@@ -1,0 +1,22 @@
+@startuml
+start
+:Login;
+
+
+while (Login Successful?) is (no)
+  #Pink:Show Error Message;
+  :Try again;
+endwhile (yes)
+while (Generate Water Reminder or Get Plant Summary?) is (yes)
+
+    if (Choose Option) then (Create Reminder)
+        #PaleGreen:Create a Reminder;
+    else (Get Summary)
+        #PaleGoldenRod:Show Summary;
+    endif
+
+    :Get Summary or Task Scheduling Confirmation;
+endwhile (no, exit)
+:exit;
+stop
+@enduml

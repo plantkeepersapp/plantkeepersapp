@@ -1,0 +1,49 @@
+@startuml PlantApp
+actor User
+participant "Frontend App\n(Web/Mobile)" as FE
+participant "Auth Module\n(Firebase Auth)" as Auth
+participant "API Gateway" as API
+participant "Notification Service" as NS
+participant "Scheduler" as Sch
+database "Database" as DB
+participant "Summary Service" as SS
+Database "External Plant Data\n(Wikipedia/Kew)" as EPD
+participant "LLM Service\n(GPT-4 Nano API)" as LLM
+participant "Ad Service" as AS
+participant "Ad Network\n(Google AdMob)" as AN
+
+== Authentication ==
+User -> FE : Launch app / Login
+FE -> Auth : Sign in (email/password)
+Auth --> FE : JWT token
+FE -> API : Request (token in header)
+API -> Auth : Validate token
+Auth --> API : Token OK
+
+== Schedule Watering Reminder ==
+User -> FE : "Set watering reminder\nfor Monstera every 3 days"
+FE -> API : POST /plants/{id}/reminder
+API -> NS : createReminder(plantId, schedule)
+NS -> Sch : scheduleJob(reminderId, cron)
+Sch -> DB : persist(reminder record)
+
+== Generate Care Summary ==
+User -> FE : "Show care summary\nfor Snake Plant"
+FE -> API : GET /plants/{id}/summary
+API -> SS : fetchSummary(plantId)
+SS -> EPD : fetchPlantMetadata(id)
+EPD --> SS : metadata (light, water, soil)
+SS -> LLM : generateSummary(metadata)
+LLM --> SS : careSummary(text)
+SS --> API : careSummary(JSON)
+API --> FE : careSummary
+
+== Load Non-intrusive Ads ==
+FE -> API : GET /ads?placement=home
+API -> AS : requestAd(placement)
+AS -> AN : fetchAd(placement)
+AN --> AS : adPayload (image, clickUrl)
+AS --> API : adPayload
+API --> FE : adPayload
+FE --> User : render ad in feed
+@enduml

@@ -12,10 +12,10 @@ from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from openai import OpenAI
 
-from .models import Plant, PlantCare, WateringSchedule, AdImpression, AdClick, ApiUsage
+from .models import Plant, PlantCare, WateringSchedule, AdImpression, AdClick, ApiUsage, UserPlant, User
 from .serializers import (
     PlantSerializer, PlantCareSerializer, WateringScheduleSerializer,
-    AdImpressionSerializer, AdClickSerializer, PlantCareSummarySerializer
+    AdImpressionSerializer, AdClickSerializer, PlantCareSummarySerializer, UserPlantSerializer, UserSerializer
 )
 
 # Initialize OpenAI client
@@ -181,8 +181,20 @@ class WateringScheduleViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing watering schedules
     """
+    # queryset = WateringSchedule.objects.all()
+    # serializer_class = WateringScheduleSerializer
+
     queryset = WateringSchedule.objects.all()
     serializer_class = WateringScheduleSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
+
+    def get_queryset(self):
+        # Optional: filter schedules to only show for logged-in user
+        return WateringSchedule.objects.filter(plant__user=self.request.user)
 
 class AdImpressionViewSet(viewsets.ModelViewSet):
     """
@@ -472,3 +484,30 @@ def track_ad_click(request):
             {"error": str(e)},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+class UserPlantViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows users to view or edit their plants.
+    """
+    queryset = UserPlant.objects.all()
+    serializer_class = UserPlantSerializer
+
+    def list(self, request, *args, **kwargs):
+
+        user_id = request.query_params.get('user_id', None)
+        if user_id is not None:
+            # Filter the queryset by user_id if provided
+            queryset = UserPlant.objects.filter(user_id=user_id)
+        else:
+            # If no user_id is provided, return all records
+            queryset = UserPlant.objects.all()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+
+class UserViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for managing user's plants.
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
