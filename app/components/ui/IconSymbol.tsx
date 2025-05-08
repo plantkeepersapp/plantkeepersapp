@@ -12,6 +12,7 @@ const MAPPING = {
   'house.fill': 'home',
   'paperplane.fill': 'send',
   'person.fill': 'person',
+  'plus.circle': 'add-circle',
   'leaf': 'eco',
   'xmark': 'close',
   'chevron.left.forwardslash.chevron.right': 'code',

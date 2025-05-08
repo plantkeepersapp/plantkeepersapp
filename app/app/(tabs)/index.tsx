@@ -1,12 +1,11 @@
-import { useMemo, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StyleSheet, TouchableOpacity, Text, View, KeyboardAvoidingView, Platform } from 'react-native';
+import { useMemo } from 'react';
+import { StyleSheet, Text, View, KeyboardAvoidingView, Platform } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { usePlants } from '@/components/PlantContext';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { AddPlantForm } from '@/components/AddPlantForm';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 
 /**
@@ -32,45 +31,8 @@ interface Leaf {
  * @returns {JSX.Element} The rendered home screen UI.
  */
 export default function HomeScreen(): JSX.Element {
-    const [showForm, setShowForm] = useState(false);
-    const [plants, setPlants] = useState<{ name: string; type: string }[]>([]);
-
-    /**
-     * Loads plants from AsyncStorage and populates state on component mount.
-     */
-    useEffect(() => {
-        const loadPlants = async () => {
-            try {
-                const storedPlants = await AsyncStorage.getItem('plants');
-                if (storedPlants) {
-                    setPlants(JSON.parse(storedPlants));
-                }
-            } catch (err) {
-                console.error('Error loading plants:', err);
-            }
-        };
-
-        loadPlants();
-    }, []);
-
-    /**
-     * Adds a new plant to the state and stores it in AsyncStorage.
-     *
-     * @param {string} plantName - The name of the plant.
-     * @param {string} plantType - The type of the plant.
-     */
-    const handleAddPlant = async (plantName: string, plantType: string) => {
-        const newPlant = { name: plantName, type: plantType };
-        const updatedPlants = [...plants, newPlant];
-        try {
-            await AsyncStorage.setItem('plants', JSON.stringify(updatedPlants));
-            setPlants(updatedPlants);
-        } catch (err) {
-            console.error('Error saving plant:', err);
-        }
-        setShowForm(false);
-    };
-
+    const { plants } = usePlants();
+    
     /**
      * Checks if the given leaf overlaps with any existing ones.
      *
@@ -136,48 +98,38 @@ export default function HomeScreen(): JSX.Element {
                 </View>
             }>
             <KeyboardAvoidingView behavior={Platform.select({ ios: 'padding', android: undefined })} style={styles.container}>
-                {!showForm ? (
-                    <ThemedView style={styles.emptyStateContainer}>
-                        {plants.length === 0 ? (
-                            <>
-                                <ThemedText type="subtitle">No plants yet 🌱</ThemedText>
-                                <ThemedText style={styles.emptyStateText}>
-                                    You haven’t added any plants yet. Tap the button below to add your first one!
-                                </ThemedText>
-                                <TouchableOpacity style={styles.addButton} onPress={() => setShowForm(true)}>
-                                    <Text style={styles.addButtonText}>Add Plant</Text>
-                                </TouchableOpacity>
-                            </>
-                        ) : (
-                            <>
-                                <TouchableOpacity style={styles.addButton} onPress={() => setShowForm(true)}>
-                                    <Text style={styles.addButtonText}>Add Plant</Text>
-                                </TouchableOpacity>
-                                <View style={styles.cardsContainer}>
-                                    {plants.map((plant, index) => {
-                                        const isRightColumn = (index + 1) % 2 === 0;
-                                        const isOnlyOneCard = plants.length === 1;
-                                        return (
-                                            <View
-                                                key={index}
-                                                style={[
-                                                    styles.card,
-                                                    isRightColumn && { marginRight: 0 },
-                                                    isOnlyOneCard && styles.singleCardCentered,
-                                                ]}
-                                            >
-                                                <Text style={styles.cardTitle}>{plant.name}</Text>
-                                                <Text style={styles.cardSubtitle}>{plant.type}</Text>
-                                            </View>
-                                        );
-                                    })}
-                                </View>
-                            </>
-                        )}
-                    </ThemedView>
-                ) : (
-                    <AddPlantForm onSubmit={handleAddPlant} onCancel={() => setShowForm(false)} />
-                )}
+                <ThemedView style={styles.emptyStateContainer}>
+                    {plants.length === 0 ? (
+                        <>
+                            <ThemedText type="subtitle">No plants yet 🌱</ThemedText>
+                            <ThemedText style={styles.emptyStateText}>
+                                You haven’t added any plants yet. Tap the 'Add plant' button to add your first one!
+                            </ThemedText>
+                        </>
+                    ) : (
+                        <>
+                            <View style={styles.cardsContainer}>
+                                {plants.map((plant, index) => {
+                                    const isRightColumn = (index + 1) % 2 === 0;
+                                    const isOnlyOneCard = plants.length === 1;
+                                    return (
+                                        <View
+                                            key={index}
+                                            style={[
+                                                styles.card,
+                                                isRightColumn && { marginRight: 0 },
+                                                isOnlyOneCard && styles.singleCardCentered,
+                                            ]}
+                                        >
+                                            <Text style={styles.cardTitle}>{plant.name}</Text>
+                                            <Text style={styles.cardSubtitle}>{plant.type}</Text>
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        </>
+                    )}
+                </ThemedView>
             </KeyboardAvoidingView>
         </ParallaxScrollView>
     );
