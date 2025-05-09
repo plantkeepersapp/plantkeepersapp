@@ -23,4 +23,8 @@ urlpatterns = [
     # Ad tracking endpoints
     path('track-impression/', views.track_ad_impression, name='track-ad-impression'),
     path('track-click/', views.track_ad_click, name='track-ad-click'),
+    
+    # AdMob test endpoints
+    path('admob-config/', views.get_admob_config, name='admob-config'),
+    path('test-ad-request/', views.test_ad_request, name='test-ad-request'),
 ]

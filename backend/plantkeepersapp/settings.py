@@ -28,9 +28,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-9i!(3-dk^s(d%r*r22uyj02oy1mnqm2p@t6rkm$4l$icxniwbb'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+DEBUG = False
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -65,6 +64,23 @@ CORS_ALLOW_ALL_ORIGINS = True  # For development only, restrict this in producti
 
 # OpenAI API settings
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
+
+# AdMob Integration Settings
+ADMOB_CONFIG = {
+    'APP_ID_ANDROID': os.getenv('ADMOB_APP_ID_ANDROID', 'ca-app-pub-3940256099942544~3347511713'),  # Test App ID
+    'APP_ID_IOS': os.getenv('ADMOB_APP_ID_IOS', 'ca-app-pub-3940256099942544~1458002511'),  # Test App ID
+    'API_KEY': os.getenv('ADMOB_API_KEY', ''),
+    # Default test ad unit IDs (for development)
+    'TEST_BANNER_AD_UNIT_ID': 'ca-app-pub-3940256099942544/6300978111',
+    'TEST_INTERSTITIAL_AD_UNIT_ID': 'ca-app-pub-3940256099942544/1033173712',
+    'TEST_REWARDED_AD_UNIT_ID': 'ca-app-pub-3940256099942544/5224354917',
+    'TEST_MODE': os.getenv('ADMOB_TEST_MODE', 'True').lower() == 'true',
+    # Production ad unit IDs (set these in your .env file)
+    'BANNER_HOME_AD_UNIT_ID': os.getenv('ADMOB_BANNER_HOME_AD_UNIT_ID', ''),
+    'BANNER_PLANT_DETAIL_AD_UNIT_ID': os.getenv('ADMOB_BANNER_PLANT_DETAIL_AD_UNIT_ID', ''),
+    'INTERSTITIAL_AD_UNIT_ID': os.getenv('ADMOB_INTERSTITIAL_AD_UNIT_ID', ''),
+    'REWARDED_AD_UNIT_ID': os.getenv('ADMOB_REWARDED_AD_UNIT_ID', ''),
+}
 
 ROOT_URLCONF = 'plantkeepersapp.urls'
 

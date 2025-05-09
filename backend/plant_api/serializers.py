@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Plant, PlantCare, WateringSchedule, AdImpression, AdClick, UserPlant, User
+from .models import Plant, PlantCare, WateringSchedule, AdImpression, AdClick, UserPlant, User, AdUnit, AdRevenue
 from rest_framework.validators import UniqueValidator
 
 
@@ -23,18 +23,57 @@ class WateringScheduleSerializer(serializers.ModelSerializer):
         model = WateringSchedule
         fields = ['id', 'plant', 'plant_name', 'last_watered', 'next_watering_due', 'is_watered']
 
+class AdUnitSerializer(serializers.ModelSerializer):
+    """
+    Serializer for AdMob ad units configuration.
+    """
+    class Meta:
+        model = AdUnit
+        fields = [
+            'id', 'name', 'format', 'placement', 'unit_id_android', 'unit_id_ios', 
+            'is_active', 'is_test', 'refresh_rate', 'targeting_keywords', 
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
 class AdClickSerializer(serializers.ModelSerializer):
+    """
+    Serializer for tracking ad clicks.
+    """
     class Meta:
         model = AdClick
-        fields = ['id', 'impression', 'click_time']
+        fields = ['id', 'impression', 'click_time', 'conversion_type', 'conversion_value']
+        read_only_fields = ['click_time']
 
 class AdImpressionSerializer(serializers.ModelSerializer):
+    """
+    Serializer for ad impressions with nested clicks.
+    """
     clicks = AdClickSerializer(many=True, read_only=True)
+    ad_unit_name = serializers.ReadOnlyField(source='ad_unit.name', default=None)
     
     class Meta:
         model = AdImpression
-        fields = ['id', 'ad_id', 'ad_network', 'placement', 
-                  'impression_time', 'device_id', 'estimated_revenue', 'clicks']
+        fields = [
+            'id', 'ad_id', 'ad_network', 'ad_unit', 'ad_unit_name', 'placement', 
+            'impression_time', 'device_id', 'device_platform', 'device_model', 'user',
+            'estimated_revenue', 'is_test_ad', 'metadata', 'clicks'
+        ]
+        read_only_fields = ['impression_time']
+
+class AdRevenueSerializer(serializers.ModelSerializer):
+    """
+    Serializer for AdMob revenue data.
+    """
+    ad_unit_name = serializers.ReadOnlyField(source='ad_unit.name')
+    ad_format = serializers.ReadOnlyField(source='ad_unit.format')
+    
+    class Meta:
+        model = AdRevenue
+        fields = [
+            'id', 'ad_unit', 'ad_unit_name', 'ad_format', 'date', 'impressions', 
+            'clicks', 'revenue', 'ecpm', 'fill_rate'
+        ]
                   
 class PlantCareSummarySerializer(serializers.Serializer):
     """
