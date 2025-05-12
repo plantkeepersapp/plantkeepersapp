@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { usePlants } from '@/components/PlantContext';
+import { usePlants } from '@/context/PlantContext';
 
 export default function AddPlantForm(): JSX.Element {
     const { addPlant } = usePlants();

@@ -1,16 +1,31 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Keyboard, Platform } from 'react-native';
+import * as SplashScreen from 'expo-splash-screen';
 
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
+import { useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const [tabVisible, setTabVisible] = useState(true);
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading) SplashScreen.hideAsync()
+  }, [loading]);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/login');
+    }
+    console.log(user);
+  }, [loading, user]);
 
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', () => setTabVisible(false));
@@ -21,6 +36,8 @@ export default function TabLayout() {
       hide.remove();
     };
   }, []);
+
+  if (loading) return null;
 
   return (
     <Tabs

@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
-import { StyleSheet, Text, View, KeyboardAvoidingView, Platform } from 'react-native';
+import { Dimensions, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 
-import { Colors } from '@/constants/Colors';
-import { usePlants } from '@/components/PlantContext';
+import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { Colors } from '@/constants/Colors';
+import { usePlants } from '@/context/PlantContext';
 
 /**
  * Represents a randomly placed leaf icon in the header.
@@ -19,7 +19,7 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 interface Leaf {
     top: number;
     left: number;
-    transform: { rotate: string }[];
+    transform: { rotate: string; }[];
     color: string;
 };
 
@@ -32,7 +32,7 @@ interface Leaf {
  */
 export default function HomeScreen(): JSX.Element {
     const { plants } = usePlants();
-    
+
     /**
      * Checks if the given leaf overlaps with any existing ones.
      *
@@ -59,9 +59,10 @@ export default function HomeScreen(): JSX.Element {
     const generateRandomLeafs = (num: number): Leaf[] => {
         const leafs: Leaf[] = [];
         const colors = ['#93C572', '#009E60', '#40826D'];
+        const maxLeft = Dimensions.get('window').width - 30;
         for (let i = 0; i < num; i++) {
             const randomTop = Math.pow(Math.random(), 2) * 190 + 30;
-            const randomLeft = Math.random() * 350;
+            const randomLeft = Math.random() * maxLeft;
             const randomRotation = Math.random() * 360;
             const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
