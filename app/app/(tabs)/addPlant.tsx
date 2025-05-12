@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { usePlants } from '@/context/PlantContext';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 
 export default function AddPlantForm(): JSX.Element {
     const { addPlant } = usePlants();
     const [plantName, setPlantName] = useState('');
     const [plantType, setPlantType] = useState('');
     const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+
+    const router = useRouter();
 
     const handleSubmit = async () => {
         setAttemptedSubmit(true);
@@ -26,6 +29,7 @@ export default function AddPlantForm(): JSX.Element {
         setPlantType('');
         setAttemptedSubmit(false);
 
+        router.back();
     };
 
     return (
@@ -35,7 +39,7 @@ export default function AddPlantForm(): JSX.Element {
             <TextInput
                 style={[
                     styles.input,
-                    attemptedSubmit && !plantName.trim() && styles.inputError
+                    attemptedSubmit && !plantName.trim() && styles.inputError,
                 ]}
                 placeholder="Plant name"
                 placeholderTextColor={attemptedSubmit && !plantName.trim() ? '#FA5F55' : '#888'}
@@ -46,7 +50,7 @@ export default function AddPlantForm(): JSX.Element {
             <TextInput
                 style={[
                     styles.input,
-                    attemptedSubmit && !plantType.trim() && styles.inputError
+                    attemptedSubmit && !plantType.trim() && styles.inputError,
                 ]}
                 placeholder="Plant type"
                 placeholderTextColor={attemptedSubmit && !plantType.trim() ? '#FA5F55' : '#888'}

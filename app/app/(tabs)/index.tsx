@@ -42,9 +42,7 @@ export default function HomeScreen(): JSX.Element {
      */
     const checkOverlap = (newLeaf: Leaf, leafPositions: Leaf[]): boolean => {
         return leafPositions.some(leaf => {
-            const distance = Math.sqrt(
-                Math.pow(newLeaf.left - leaf.left, 2) + Math.pow(newLeaf.top - leaf.top, 2)
-            );
+            const distance = Math.sqrt(Math.pow(newLeaf.left - leaf.left, 2) + Math.pow(newLeaf.top - leaf.top, 2));
             return distance < 30;
         });
     };
@@ -171,9 +169,7 @@ const styles = StyleSheet.create({
         height: 250,
         width: '100%',
     },
-    leafIcon: {
-        position: 'absolute',
-    },
+    leafIcon: { position: 'absolute' },
     container: {
         flex: 1,
         paddingTop: 0,

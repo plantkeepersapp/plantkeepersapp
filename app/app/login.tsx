@@ -38,20 +38,22 @@ export default function Login() {
             <TextInput
                 style={[
                     styles.input,
-                    error && styles.inputError
+                    error && styles.inputError,
                 ]}
+                keyboardType="email-address"
                 placeholder="Email"
-                autoCapitalize="none"
                 placeholderTextColor={error ? '#FA5F55' : '#888'}
+                autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail} />
             <TextInput
                 style={[
                     styles.input,
-                    error && styles.inputError
+                    error && styles.inputError,
                 ]}
                 placeholder="Password"
                 placeholderTextColor={error ? '#FA5F55' : '#888'}
+                autoCapitalize="none"
                 value={password}
                 secureTextEntry
                 onChangeText={setPassword}
