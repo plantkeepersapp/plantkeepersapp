@@ -56,11 +56,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContainer: {
-    padding: 24,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 24,
-  },
+  flexGrow: 1,
+  padding: 24,
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 24,
+},
   header: {
     alignItems: 'center',
     gap: 8,

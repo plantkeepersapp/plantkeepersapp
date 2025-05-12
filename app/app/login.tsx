@@ -24,7 +24,7 @@ export default function Login() {
     const handleLogin = async () => {
         try {
             setLoading(true);
-            await signInWithEmailAndPassword(FIREBASE_AUTH, email, password);
+            await signInWithEmailAndPassword(FIREBASE_AUTH, email.trim(), password);
         } catch (err: any) {
             setError(err.message);
         } finally {
