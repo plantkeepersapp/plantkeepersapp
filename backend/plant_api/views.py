@@ -9,7 +9,7 @@ import logging
 
 from django.conf import settings
 from django.utils import timezone
-from django.db.models import Sum, Count, Avg
+from django.db.models import Sum, Count, Avg, F, FloatField, ExpressionWrapper
 from rest_framework import viewsets, status, views
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
@@ -17,12 +17,12 @@ from openai import OpenAI
 
 from .models import (
     Plant, PlantCare, WateringSchedule, AdImpression, AdClick, ApiUsage, UserPlant, User,
-    AdUnit, AdRevenue
+    AdUnit, AdRevenue, ActiveUser, AdKpi
 )
 from .serializers import (
     PlantSerializer, PlantCareSerializer, WateringScheduleSerializer,
     AdImpressionSerializer, AdClickSerializer, PlantCareSummarySerializer, UserPlantSerializer, 
-    UserSerializer, AdUnitSerializer, AdRevenueSerializer
+    UserSerializer, AdUnitSerializer, AdRevenueSerializer, ActiveUserSerializer, AdKpiSerializer
 )
 
 # Initialize logger
@@ -965,78 +965,250 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-import json
-from django.conf import settings
-from django.http import JsonResponse
-from rest_framework.decorators import api_view
-
-
-@api_view(['GET'])
-def get_admob_config(request):
+class ActiveUserViewSet(viewsets.ModelViewSet):
     """
-    Test endpoint to verify AdMob configuration
+    API endpoint for tracking daily active users
     """
-    platform = request.query_params.get('platform', 'android')
+    queryset = ActiveUser.objects.all()
+    serializer_class = ActiveUserSerializer
     
-    config = {
-        'test_mode': settings.ADMOB_CONFIG['TEST_MODE'],
-        'app_id': settings.ADMOB_CONFIG['APP_ID_ANDROID'] if platform == 'android' else settings.ADMOB_CONFIG['APP_ID_IOS'],
-        'ad_units': {
-            'home_banner': settings.ADMOB_CONFIG['TEST_BANNER_AD_UNIT_ID'],
-            'interstitial': settings.ADMOB_CONFIG['TEST_INTERSTITIAL_AD_UNIT_ID'],
-            'rewarded': settings.ADMOB_CONFIG['TEST_REWARDED_AD_UNIT_ID'],
-        }
-    }
+    def create(self, request, *args, **kwargs):
+        """
+        Override create to handle updating an existing active user record for today
+        """
+        user_id = request.data.get('user')
+        if not user_id:
+            return Response({"error": "User ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        today = timezone.now().date()
+        
+        # Try to get existing record for today
+        try:
+            active_user = ActiveUser.objects.get(user_id=user_id, date=today)
+            active_user.last_active_time = timezone.now()
+            active_user.session_count += 1
+            active_user.save()
+            serializer = self.get_serializer(active_user)
+            return Response(serializer.data)
+        except ActiveUser.DoesNotExist:
+            # Create new record
+            return super().create(request, *args, **kwargs)
     
-    return Response(config)
-
-
-@api_view(['POST'])
-def test_ad_request(request):
-    """
-    Test endpoint to simulate an ad request and record an impression
-    """
-    try:
-        placement = request.data.get('placement', 'home_banner')
-        platform = request.data.get('platform', 'android')
-        device_id = request.data.get('device_id', 'test-device')
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """
+        Get statistics on active users
+        """
+        days = int(request.query_params.get('days', 30))
+        start_date = timezone.now().date() - timedelta(days=days)
         
-        # Get the correct ad unit ID from ADMOB_CONFIG
-        ad_unit_mapping = {
-            'home_banner': settings.ADMOB_CONFIG.get('TEST_BANNER_AD_UNIT_ID', 'ca-app-pub-3940256099942544/6300978111'),
-            'plant_detail': settings.ADMOB_CONFIG.get('TEST_BANNER_AD_UNIT_ID', 'ca-app-pub-3940256099942544/6300978111'),
-            'interstitial': settings.ADMOB_CONFIG.get('TEST_INTERSTITIAL_AD_UNIT_ID', 'ca-app-pub-3940256099942544/1033173712'),
-            'rewarded': settings.ADMOB_CONFIG.get('TEST_REWARDED_AD_UNIT_ID', 'ca-app-pub-3940256099942544/5224354917')
-        }
-        ad_unit_id = ad_unit_mapping.get(placement, ad_unit_mapping['home_banner'])
-        
-        # Create a test impression
-        impression = AdImpression(
-            ad_id=f"test-ad-{placement}",
-            ad_network='AdMob',
-            placement=placement,
-            device_id=device_id,
-            device_platform=platform,
-            estimated_revenue=0.0,
-            is_test_ad=True
+        # Aggregate data
+        stats = self.get_queryset().filter(date__gte=start_date).aggregate(
+            total_active_users=Count('user', distinct=True),
+            total_sessions=Sum('session_count'),
+            avg_daily_active_users=Count('id') / days,
         )
-        impression.save()
         
-        # Create a response with the impression details
+        # Get daily active users
+        daily_users = []
+        current_date = start_date
+        today = timezone.now().date()
+        
+        while current_date <= today:
+            day_users = self.get_queryset().filter(date=current_date).count()
+            
+            daily_users.append({
+                'date': current_date.strftime('%Y-%m-%d'),
+                'active_users': day_users
+            })
+            
+            current_date += timedelta(days=1)
+        
+        return Response({
+            'summary': {
+                'period_days': days,
+                'total_active_users': stats['total_active_users'] or 0,
+                'total_sessions': stats['total_sessions'] or 0,
+                'average_daily_active_users': round(stats['avg_daily_active_users'] or 0, 2),
+            },
+            'daily_active_users': daily_users
+        })
+
+class AdKpiViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for ad KPI metrics tracking
+    """
+    queryset = AdKpi.objects.all()
+    serializer_class = AdKpiSerializer
+
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """
+        Get summary statistics for ad impression KPI metrics
+        """
+        days = int(request.query_params.get('days', 30))
+        start_date = timezone.now().date() - timedelta(days=days)
+        
+        # Get aggregate KPI data
+        queryset = self.get_queryset().filter(date__gte=start_date)
+        
+        kpi_summary = queryset.aggregate(
+            avg_impressions_per_user=Avg('impressions_per_user'),
+            avg_active_users=Avg('active_users'),
+            avg_total_impressions=Avg('total_impressions'),
+            total_estimated_revenue=Sum('estimated_revenue'),
+            avg_arpu=Avg('estimated_arpu'),
+            target_achieved_days=Count('id', filter=models.Q(target_achieved=True)),
+        )
+        
+        # Calculate target achievement percentage
+        target_achievement_percentage = (kpi_summary['target_achieved_days'] / queryset.count()) * 100 if queryset.count() > 0 else 0
+        
+        # Get daily KPI data
+        daily_kpi = []
+        for kpi in queryset.order_by('date'):
+            daily_kpi.append({
+                'date': kpi.date.strftime('%Y-%m-%d'),
+                'active_users': kpi.active_users,
+                'total_impressions': kpi.total_impressions,
+                'impressions_per_user': round(kpi.impressions_per_user, 2),
+                'estimated_arpu': float(kpi.estimated_arpu),
+                'target_achieved': kpi.target_achieved,
+                'target_percentage': round((kpi.impressions_per_user / 50) * 100, 1) if kpi.impressions_per_user > 0 else 0,
+            })
+        
+        # Format response
         response_data = {
-            'success': True,
-            'impression_id': impression.id,
-            'ad_unit_id': ad_unit_id,
-            'is_test': True,
-            'message': f"Test impression recorded for {placement} placement",
-            'test_click_url': f"/api/track-click/?impression_id={impression.id}"
+            'summary': {
+                'period_days': days,
+                'period_start': start_date.strftime('%Y-%m-%d'),
+                'period_end': timezone.now().date().strftime('%Y-%m-%d'),
+                'avg_impressions_per_user': round(kpi_summary['avg_impressions_per_user'] or 0, 2),
+                'avg_active_users': round(kpi_summary['avg_active_users'] or 0, 2),
+                'avg_daily_impressions': round(kpi_summary['avg_total_impressions'] or 0, 2),
+                'total_estimated_revenue': float(kpi_summary['total_estimated_revenue'] or 0),
+                'avg_arpu': float(kpi_summary['avg_arpu'] or 0),
+                'target': 50,  # 50 impressions per user per day
+                'target_achieved_days': kpi_summary['target_achieved_days'] or 0,
+                'target_achievement_percentage': round(target_achievement_percentage, 1),
+            },
+            'daily_kpi': daily_kpi,
         }
         
         return Response(response_data)
-    except Exception as e:
-        logger.error(f"Error in test_ad_request: {str(e)}")
+
+    @action(detail=False, methods=['post'])
+    def calculate_daily_kpi(self, request):
+        """
+        Calculate KPI metrics for a specific day (defaults to yesterday)
+        """
+        # Get date for calculation (default to yesterday)
+        date_str = request.data.get('date')
+        if date_str:
+            try:
+                calculation_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, 
+                               status=status.HTTP_400_BAD_REQUEST)
+        else:
+            calculation_date = timezone.now().date() - timedelta(days=1)
+        
+        # Get active user count for the day
+        active_users = ActiveUser.objects.filter(date=calculation_date).count()
+        
+        # Get total ad impressions for the day
+        total_impressions = AdImpression.objects.filter(
+            impression_time__date=calculation_date
+        ).count()
+        
+        # Calculate impressions per user
+        impressions_per_user = total_impressions / active_users if active_users > 0 else 0
+        
+        # Calculate estimated revenue ($0.005 per impression)
+        estimated_revenue = Decimal(total_impressions) * Decimal('0.005')
+        
+        # Calculate ARPU
+        estimated_arpu = estimated_revenue / Decimal(active_users) if active_users > 0 else Decimal('0.0')
+        
+        # Check if target is achieved (50 impressions per user)
+        target_achieved = impressions_per_user >= 50.0
+        
+        # Create or update KPI record
+        kpi, created = AdKpi.objects.update_or_create(
+            date=calculation_date,
+            defaults={
+                'active_users': active_users,
+                'total_impressions': total_impressions,
+                'impressions_per_user': impressions_per_user,
+                'estimated_revenue': estimated_revenue,
+                'estimated_arpu': estimated_arpu,
+                'target_achieved': target_achieved,
+            }
+        )
+        
+        serializer = self.get_serializer(kpi)
+        return Response(serializer.data)
+    @action(detail=False, methods=['post'])
+    def calculate_historical_kpi(self, request):
+        """
+        Calculate KPI metrics for a range of days
+        """
+        days = int(request.data.get('days', 30))
+        end_date = timezone.now().date() - timedelta(days=1)  # Yesterday
+        start_date = end_date - timedelta(days=days-1)
+        
+        results = []
+        current_date = start_date
+        
+        while current_date <= end_date:
+            # Get active user count for the day
+            active_users = ActiveUser.objects.filter(date=current_date).count()
+            
+            # Get total ad impressions for the day
+            total_impressions = AdImpression.objects.filter(
+                impression_time__date=current_date
+            ).count()
+            
+            # Calculate impressions per user
+            impressions_per_user = total_impressions / active_users if active_users > 0 else 0
+            
+            # Calculate estimated revenue ($0.005 per impression)
+            estimated_revenue = Decimal(total_impressions) * Decimal('0.005')
+            
+            # Calculate ARPU
+            estimated_arpu = estimated_revenue / Decimal(active_users) if active_users > 0 else Decimal('0.0')
+            
+            # Check if target is achieved (50 impressions per user)
+            target_achieved = impressions_per_user >= 50.0
+            
+            # Create or update KPI record
+            kpi, created = AdKpi.objects.update_or_create(
+                date=current_date,
+                defaults={
+                    'active_users': active_users,
+                    'total_impressions': total_impressions,
+                    'impressions_per_user': impressions_per_user,
+                    'estimated_revenue': estimated_revenue,
+                    'estimated_arpu': estimated_arpu,
+                    'target_achieved': target_achieved,
+                }
+            )
+            
+            results.append({
+                'date': current_date.strftime('%Y-%m-%d'),
+                'active_users': active_users,
+                'total_impressions': total_impressions,
+                'impressions_per_user': round(impressions_per_user, 2),
+                'estimated_revenue': float(estimated_revenue),
+                'estimated_arpu': float(estimated_arpu),
+                'target_achieved': target_achieved,
+            })
+            
+            current_date += timedelta(days=1)
+        
         return Response({
-            'success': False,
-            'error': str(e),
-            'message': 'Error creating test ad impression'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            'days_processed': len(results),
+            'start_date': start_date.strftime('%Y-%m-%d'),
+            'end_date': end_date.strftime('%Y-%m-%d'),
+            'results': results
+        })

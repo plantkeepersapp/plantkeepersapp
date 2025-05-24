@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Plant, PlantCare, WateringSchedule, AdImpression, AdClick, UserPlant, User, AdUnit, AdRevenue
+from .models import Plant, PlantCare, WateringSchedule, AdImpression, AdClick, UserPlant, User, AdUnit, AdRevenue, ActiveUser, AdKpi
 from rest_framework.validators import UniqueValidator
 
 
@@ -116,3 +116,37 @@ class UserSerializer(serializers.ModelSerializer):
             'createdat',
         ]
         read_only_fields = ['createdat']
+
+class ActiveUserSerializer(serializers.ModelSerializer):
+    """
+    Serializer for tracking daily active users.
+    """
+    username = serializers.ReadOnlyField(source='user.username')
+    
+    class Meta:
+        model = ActiveUser
+        fields = ['id', 'user', 'username', 'date', 'last_active_time', 'session_count']
+        read_only_fields = ['date']
+
+class AdKpiSerializer(serializers.ModelSerializer):
+    """
+    Serializer for ad KPI metrics.
+    """
+    target_percentage = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = AdKpi
+        fields = [
+            'id', 'date', 'active_users', 'total_impressions', 'impressions_per_user',
+            'estimated_revenue', 'estimated_arpu', 'target_achieved', 'target_percentage',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at', 'target_percentage']
+    
+    def get_target_percentage(self, obj):
+        """
+        Calculate percentage of target achieved (target is 50 impressions per user)
+        """
+        if obj.impressions_per_user > 0:
+            return min(100, round((obj.impressions_per_user / 50) * 100, 1))
+        return 0

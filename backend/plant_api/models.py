@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from decimal import Decimal
 
 class Plant(models.Model):
     """
@@ -180,3 +181,62 @@ class ApiUsage(models.Model):
     
     def __str__(self):
         return f"{self.api_name} - {self.endpoint} - {self.request_time}"
+
+class ActiveUser(models.Model):
+    """
+    Model for tracking daily active users.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activity_logs')
+    date = models.DateField(default=timezone.now)
+    last_active_time = models.DateTimeField(default=timezone.now)
+    session_count = models.IntegerField(default=1)
+    
+    class Meta:
+        unique_together = ['user', 'date']
+        
+    def __str__(self):
+        return f"{self.user.username} active on {self.date}"
+
+class AdKpi(models.Model):
+    """
+    Model for tracking KPI metrics related to ad impressions and active users.
+    
+    KPI: Ad impressions per active user per day (directly tied to revenue model)
+    Target: 50 ad impressions per active user per day
+    Estimated revenue: $0.005 per impression, targeting $0.25 ARPU
+    """
+    date = models.DateField(unique=True)
+    active_users = models.IntegerField(default=0)
+    total_impressions = models.IntegerField(default=0)
+    impressions_per_user = models.FloatField(default=0.0)
+    estimated_revenue = models.DecimalField(max_digits=10, decimal_places=6, default=0.0)
+    estimated_arpu = models.DecimalField(max_digits=10, decimal_places=6, default=0.0, 
+                                         help_text="Average Revenue Per User")
+    target_achieved = models.BooleanField(default=False, 
+                                          help_text="Whether target of 50 impressions per user was achieved")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Ad KPI for {self.date}: {self.impressions_per_user:.1f} impressions per user"
+    
+    def save(self, *args, **kwargs):
+        # Calculate impressions per user
+        if self.active_users > 0:
+            self.impressions_per_user = self.total_impressions / self.active_users
+        else:
+            self.impressions_per_user = 0
+            
+        # Calculate estimated revenue ($0.005 per impression)
+        self.estimated_revenue = Decimal(self.total_impressions) * Decimal('0.005')
+        
+        # Calculate ARPU (Average Revenue Per User)
+        if self.active_users > 0:
+            self.estimated_arpu = self.estimated_revenue / Decimal(self.active_users)
+        else:
+            self.estimated_arpu = Decimal('0.0')
+            
+        # Check if target is achieved (50 impressions per user)
+        self.target_achieved = self.impressions_per_user >= 50.0
+            
+        super().save(*args, **kwargs)
