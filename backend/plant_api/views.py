@@ -946,6 +946,7 @@ class UserPlantViewSet(viewsets.ModelViewSet):
     """
     queryset = UserPlant.objects.all()
     serializer_class = UserPlantSerializer
+    serializer_class_plants = PlantSerializer
 
     def list(self, request, *args, **kwargs):
         user_id = request.query_params.get('user_id', None)
@@ -955,8 +956,35 @@ class UserPlantViewSet(viewsets.ModelViewSet):
         else:
             # If no user_id is provided, return all records
             queryset = UserPlant.objects.all()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+
+        plant_ids = queryset.values_list('plant', flat=True)
+        queryset_plants = Plant.objects.filter(id__in=plant_ids)
+        serializerplants = self.serializer_class_plants(queryset_plants, many=True)
+        serializeddata = self.serializer_class(queryset, many=True)
+
+
+        serializerplants_data = serializerplants.data
+        serializeddata_data = serializeddata.data
+
+        plant_care_map = {}
+        for plant in serializerplants_data:
+            care = plant.get('care', {})
+            if care:
+                care = {k: v for k, v in care.items() if k != 'id'}
+            plant_care_map[int(plant['id'])] = care
+
+        combined = []
+        for userplant in serializeddata_data:
+            plant_id = int(userplant['plant'])
+            combined_item = {
+                'userplant_id': userplant['id'],
+                'plant_id': plant_id,
+                **plant_care_map.get(plant_id, {})
+            }
+            combined.append(combined_item)
+
+
+        return Response(combined)
 
 class UserViewSet(viewsets.ModelViewSet):
     """

@@ -6,8 +6,7 @@ from rest_framework.validators import UniqueValidator
 class PlantCareSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlantCare
-        fields = ['id', 'plant', 'water_frequency', 'light_requirements', 'humidity_level', 
-                  'temperature_range', 'soil_type', 'fertilizer_frequency', 'care_summary']
+        fields = ['id', 'water_frequency', 'light_requirements', 'care_summary']
 
 class PlantSerializer(serializers.ModelSerializer):
     care = PlantCareSerializer(read_only=True)

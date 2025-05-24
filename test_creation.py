@@ -8,19 +8,19 @@ def main():
     userurl = 'http://127.0.0.1:8000/api/user/'  # Adjust based on your actual route
 
     #CREATE USER
-    data1 = {
-        'username': 'new_user_567',
-        'birthname': 'John Smith1',
-        'email': 'new567@example.com',
-    }
-    data2 = {
-        'username': 'new_user_789',
-        'birthname': 'John Smith1',
-        'email': 'new789@example.com',
-    }
+    # data1 = {
+    #     'username': 'new_user_5676',
+    #     'birthname': 'John Smith111',
+    #     'email': 'new5637@example.com',
+    # }
+    # data2 = {
+    #     'username': 'new_user_7897',
+    #     'birthname': 'John Smith11',
+    #     'email': 'new7389@example.com',
+    # }
 
-    post_data(data1, userurl)
-    post_data(data2, userurl)
+    # post_data(data1, userurl)
+    # post_data(data2, userurl)
 
     #---------------------------------------------------------------------------------------------
 
@@ -32,6 +32,7 @@ def main():
         "name": "paprika",
         "description": "",
         "water_frequenty" : 30,
+        "Scientific_name": "Capsicum annuum",
         # Include any other required fields for your Plant model
     }
 
@@ -43,100 +44,63 @@ def main():
     if response.status_code == 200:
         plants = response.json()
         for plant in plants:
+            print(plant)
             pass
-            #print(plant)
+            print(plant)
     else:
         print("Failed to fetch plants:", response.status_code)
-
-    #----------------------------------------------------------------------------------------
-
-    #CREATE PLANT CARE
-    url = 'http://127.0.0.1:8000/api/plant-care/'
-    data1 = {
-        "plant" : plants[5]["id"],
-        "water_frequenty" : 30,
-        "light_requirements": 30,
-        "care_summary" : "Needs watering every 30 days"
-    }
-
-    data12 = {
-        "plant" : plants[5]["id"],
-        "water_frequenty" : 20,
-        "light_requirements": "Full sun"
-    }
-
-    patch_data(data1, url)
-    patch_data(data12, url)
-
-
-    #-------------------------------------------------------------------------------------------
     
-    #Add plants to our users
+    exit()
+
+    # #----------------------------------------------------------------------------------------
+
+    # #CREATE PLANT CARE
+    # url = 'http://127.0.0.1:8000/api/plant-care/'
+    # data1 = {
+    #     "plant" : plants[5]["id"],
+    #     "water_frequenty" : 30,
+    #     "light_requirements": 30,
+    #     "care_summary" : "Needs watering every 30 days"
+    # }
+
+    # data12 = {
+    #     "plant" : plants[5]["id"],
+    #     "water_frequenty" : 20,
+    #     "light_requirements": "Full sun"
+    # }
+
+    # # patch_data(data1, url)
+    # # patch_data(data12, url)
+
+
+    # #-------------------------------------------------------------------------------------------
+    
+    # #Add plants to our users
     url = 'http://127.0.0.1:8000/api/userplants/'
     data1 = {
-        "user": 6,
-        "plant" : plants[5]["id"]
+        "user_id": 7,
     }
 
     data2 = {
         "user": 7,
-        "plant" : plants[5]["id"]
+        "plant" : 1
     }
 
-    data3 = {
-        "user": 5,
-        "plant" : plants[5]["id"]
-    }
+    #post_data(data1, url)
+    get_data(url, data1)
 
-    data4 = {
-        "user": 7,
-        "plant" : plants[5]["id"]
-    }
-
-    data5 = {
-        "user": 6,
-        "plant" : plants[5]["id"]
-    }
     
-    data6 = {
-        "user": 5,
-        "plant" : plants[5]["id"]
-    }
 
-    data7 = {
-        "user": 6,
-        "plant" : plants[5]["id"]
-    }
+    # get_data(url, data1)
+    # url2 = f'http://127.0.0.1:8000/api/userplants/2/'
+    # response = requests.delete(url2)
+    # if response.status_code == 204:
+    #     print('Deleted successfully!')
+    # else:
+    #     print('Failed to delete:', response.status_code, response.text)
+    # get_data(url, data1)
+    # #Delete one userplant
 
-    # post_data(data1, url)
-    # post_data(data2, url)
-    # post_data(data3, url)
-    # post_data(data4, url)
-    # post_data(data5, url)
-    # post_data(data6, url)
-    # post_data(data7, url)
-
-
-    #Get back, the userplants
-
-    params = {'user_id':plants[5]["id"]}
-    response = requests.get(url, params=params)
-    print("Status Code:", response.status_code)
-    if response.status_code == 200:
-        print("Response Data:")
-        print(response.json())
-    else:
-        print("Error:", response.text)
-
-
-def patch_data(data, url):
-
-    response = requests.put(url, json=data)
-
-    if response.status_code == 201:
-        print('Posted, check the database!')
-    else:
-        print('Failed to create:', response.status_code, response.json())
 
 def post_data(data, url):
 
@@ -148,6 +112,13 @@ def post_data(data, url):
         print('Failed to create:', response.status_code, response.json())
 
 
+def get_data(url, params=None):
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        print('Data retrieved successfully!')
+        print(response.json())
+    else:
+        print('Failed to retrieve:', response.status_code, response.text)
 
 
 if __name__ == "__main__":

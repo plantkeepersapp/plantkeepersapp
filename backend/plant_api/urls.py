@@ -5,11 +5,9 @@ from . import views
 # Setup DRF router for our ViewSets
 router = DefaultRouter()
 router.register(r'plants', views.PlantViewSet)
-router.register(r'plant-care', views.PlantCareViewSet)
-router.register(r'watering-schedules', views.WateringScheduleViewSet)
 router.register(r'ad-impressions', views.AdImpressionViewSet)
 router.register(r'ad-clicks', views.AdClickViewSet)
-router.register(r'userplants', views.UserPlantViewSet, basename='userplant')
+router.register(r'userplants', views.UserPlantViewSet, basename='userplants')
 router.register(r'user', views.UserViewSet)
 
 # URL patterns for plant API
