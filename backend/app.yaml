@@ -1,0 +1,17 @@
+runtime: python39
+
+env_variables:
+  DJANGO_SETTINGS_MODULE: "plantkeepersapp.settings"
+  SECRET_KEY: YOUR_SECRET_KEY_HERE
+  DEBUG: "False"
+  ALLOWED_HOSTS: ".appspot.com,localhost,127.0.0.1"
+  OPENAI_API_KEY: YOUR_OPENAI_API_KEY
+  
+handlers:
+- url: /static
+  static_dir: static/
+
+- url: /.*
+  script: auto
+
+entrypoint: gunicorn -b :$PORT plantkeepersapp.wsgi

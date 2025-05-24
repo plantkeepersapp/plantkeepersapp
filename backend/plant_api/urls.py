@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
+from .views_health import health_check
 
 # Setup DRF router for our ViewSets
 router = DefaultRouter()
@@ -16,6 +17,9 @@ router.register(r'user', views.UserViewSet)
 urlpatterns = [
     # Router generated URLs
     path('', include(router.urls)),
+    
+    # Health check endpoint
+    path('health/', health_check, name='health-check'),
     
     # Custom API endpoints
     path('care-summary/', views.PlantCareView.as_view(), name='plant-care-summary'),

@@ -25,11 +25,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-9i!(3-dk^s(d%r*r22uyj02oy1mnqm2p@t6rkm$4l$icxniwbb'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-9i!(3-dk^s(d%r*r22uyj02oy1mnqm2p@t6rkm$4l$icxniwbb')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+
+# Update allowed hosts to include App Engine and Cloud Run URLs
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,.appspot.com,.run.app,*').split(',')
 
 
 # Application definition
@@ -60,7 +62,30 @@ MIDDLEWARE = [
 ]
 
 # CORS settings for frontend access
-CORS_ALLOW_ALL_ORIGINS = True  # For development only, restrict this in production
+# For production, only allow specific origins
+CORS_ALLOWED_ORIGINS = [
+    # Add your Firebase hosting URL here (example: https://your-app.web.app)
+    os.getenv('FRONTEND_URL', 'http://localhost:3000'),
+    'https://localhost:3000',
+    'http://localhost:19006',  # Expo development server
+    'https://plantkeepers-app.web.app',  # Firebase hosting URL
+    'https://plantkeepers-app.firebaseapp.com',  # Firebase hosting URL (alternative domain)
+]
+
+# Also allow all origins in development
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+
+# Additional CORS configurations
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 # OpenAI API settings
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
@@ -148,6 +173,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+# Media files
+MEDIA_URL = 'media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
