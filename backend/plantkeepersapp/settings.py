@@ -61,6 +61,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
+#FireBase settings
+FIREBASE_CREDENTIALS = os.getenv('FIREBASE_CREDENTIALS', 'plantkeepers-app-firebase-adminsdk-fbsvc-ec5713b057.json')
 # CORS settings for frontend access
 # For production, only allow specific origins
 CORS_ALLOWED_ORIGINS = [
@@ -183,3 +186,25 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# # Firebase settings
+# REST_FRAMEWORK = {
+#     'DEFAULT_AUTHENTICATION_CLASSES': [
+#         'plant_api.firebase_auth.FirebaseAuthentication',  # Path to your custom class
+#     ],
+#     'DEFAULT_PERMISSION_CLASSES': [
+#         'rest_framework.permissions.IsAuthenticated',      # Require authentication by default
+#     ],
+# }
+
+import plant_api.verify_firebase
+
+MIDDLEWARE_AUTH = [
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'plant_api.middleware.firebase_auth.FirebaseAuthMiddleware',
+]
