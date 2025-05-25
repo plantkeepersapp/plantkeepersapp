@@ -1,13 +1,11 @@
-from firebase_admin import auth
+import firebase_admin
+from firebase_admin import credentials
+import os
+from django.conf import settings
+cred_path = os.path.join(
+    os.path.dirname(__file__),
+    settings.FIREBASE_CREDENTIALS)
 
-def verify_token(token):
-    """
-    Verify the Firebase token and return the user ID if valid.
-    """
-    try:
-        decoded_token = auth.verify_id_token(token)
-        uid = decoded_token['uid']
-        return uid
-    except Exception as e:
-        print(f"Token verification failed: {e}")
-        return None
+if not firebase_admin._apps:
+    cred = credentials.Certificate(os.path.abspath(cred_path))
+    firebase_admin.initialize_app(cred)
