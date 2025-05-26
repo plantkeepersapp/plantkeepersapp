@@ -4,10 +4,22 @@ from firebase_admin import auth
 class FirebaseAuthMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
+        # Only exact or specific paths are allowed without auth
+        self.exempt_paths = [
+            '/',  # Exactly root path
+            '/api/',  # API root path
+            '/api/health/',
+            '/api-docs/',
+        ]
 
     def __call__(self, request):
-        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+        path = request.path
 
+        # Use exact match for exempted paths
+        if path in self.exempt_paths:
+            return self.get_response(request)
+
+        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
         if not auth_header.startswith('Bearer '):
             return JsonResponse({'error': 'Authorization header missing or invalid'}, status=401)
 
