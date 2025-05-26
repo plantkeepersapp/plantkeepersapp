@@ -3,12 +3,14 @@ import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthContext';
 import { FIREBASE_AUTH } from '@/firebase.config';
 import { useRouter } from 'expo-router';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-export default function Login() {
+
+export default function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -21,10 +23,27 @@ export default function Login() {
         }
     }, [loading, user]);
 
-    const handleLogin = async () => {
+    const handleRegister = async () => {
+        if (!email || !email.includes('@')) {
+            setError('An email address is required.');
+            return;
+        }
+        if (!password) {
+            setError('Please select a password.');
+            return;
+        }
+        if (!confirmPassword) {
+            setError('Please confirm your password.');
+            return;
+        }
+        if (password !== confirmPassword) {
+            setError('Passwords do not match.');
+            return;
+        }
+
         try {
             setLoading(true);
-            await signInWithEmailAndPassword(FIREBASE_AUTH, email.trim(), password);
+            await createUserWithEmailAndPassword(FIREBASE_AUTH, email.trim(), password);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -34,39 +53,43 @@ export default function Login() {
 
     return (
         <ThemedView style={styles.formContainer}>
-            <ThemedText type="title">Login</ThemedText>
+            <ThemedText type="title">Register</ThemedText>
             <TextInput
-                style={[
-                    styles.input,
-                    error && styles.inputError,
-                ]}
+                style={[styles.input, error && styles.inputError]}
                 keyboardType="email-address"
                 placeholder="Email"
                 placeholderTextColor={error ? '#FA5F55' : '#888'}
                 autoCapitalize="none"
                 value={email}
-                onChangeText={setEmail} />
+                onChangeText={setEmail}
+            />
             <TextInput
-                style={[
-                    styles.input,
-                    error && styles.inputError,
-                ]}
+                style={[styles.input, error && styles.inputError]}
                 placeholder="Password"
                 placeholderTextColor={error ? '#FA5F55' : '#888'}
                 autoCapitalize="none"
-                value={password}
                 secureTextEntry
+                value={password}
                 onChangeText={setPassword}
             />
-            <TouchableOpacity style={styles.button} onPress={loading ? () => { } : handleLogin}>
-                <Text style={styles.buttonText}>{loading ? 'Loading' : 'Login'}</Text>
+            <TextInput
+                style={[styles.input, error && styles.inputError]}
+                placeholder="Confirm Password"
+                placeholderTextColor={error ? '#FA5F55' : '#888'}
+                autoCapitalize="none"
+                secureTextEntry
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+            />
+            <TouchableOpacity style={styles.button} onPress={loading ? () => { } : handleRegister}>
+                <Text style={styles.buttonText}>{loading ? 'Loading' : 'Register'}</Text>
             </TouchableOpacity>
             {error ? <Text style={{ color: 'red' }}>{error}</Text> : null}
 
             <View style={styles.loginRedirect}>
-                <Text style={styles.redirectText}>Don't have an account?</Text>
-                <TouchableOpacity onPress={() => router.replace('/register')}>
-                    <Text style={styles.loginLink}> Register</Text>
+                <Text style={styles.redirectText}>Already have an account?</Text>
+                <TouchableOpacity onPress={() => router.replace('/login')}>
+                    <Text style={styles.loginLink}> Login</Text>
                 </TouchableOpacity>
             </View>
         </ThemedView>

@@ -1,13 +1,15 @@
 import { FIREBASE_AUTH } from '@/firebase.config';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ThemedView } from '../../components/ThemedView';
 import { useAuth } from '../../context/AuthContext';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 export default function Profile() {
     const { user } = useAuth();
     const router = useRouter();
+    const [emailSendingStage, setEmailSendingStage] = useState('');
 
     const handleLogout = async () => {
         try {
@@ -15,6 +17,14 @@ export default function Profile() {
             router.replace('/login');
         } catch (error) {
             Alert.alert('Logout Error', 'Something went wrong during logout.');
+        }
+    };
+
+    const passwordReset = async () => {
+        if (user?.email) {
+            setEmailSendingStage('sending');
+            await sendPasswordResetEmail(FIREBASE_AUTH, user.email);
+            setEmailSendingStage('sent');
         }
     };
 
@@ -36,6 +46,14 @@ export default function Profile() {
                     <View style={styles.infoRow}>
                         <Text style={styles.label}>User ID:</Text>
                         <Text style={styles.value}>{user?.uid}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                        <Text style={styles.label}>Password:</Text>
+                        {emailSendingStage ?
+                            <Text style={styles.resetSent}>{emailSendingStage == 'sending' ? 'Sending...' : 'Email sent.'}</Text>
+                            :
+                            <Text style={styles.reset} onPress={passwordReset}>Reset</Text>
+                        }
                     </View>
                     {/* Add more fields here later if needed */}
                 </View>
@@ -81,13 +99,13 @@ const styles = StyleSheet.create({
     card: {
         width: '100%',
         backgroundColor: '#f9f9f9',
-        padding: 16,
+        padding: 24,
         borderRadius: 12,
         elevation: 2,
         shadowColor: '#000',
         shadowOpacity: 0.06,
         shadowRadius: 6,
-        gap: 12,
+        gap: 24,
     },
     infoRow: {
         flexDirection: 'row',
@@ -111,4 +129,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
+    reset: { color: '#93C572' },
+    resetSent: { color: '#333' },
 });
