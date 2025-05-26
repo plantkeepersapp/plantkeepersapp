@@ -194,7 +194,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# # Firebase settings
+# Firebase settings
 # REST_FRAMEWORK = {
 #     'DEFAULT_AUTHENTICATION_CLASSES': [
 #         'plant_api.firebase_auth.FirebaseAuthentication',  # Path to your custom class
@@ -203,3 +203,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #         'rest_framework.permissions.IsAuthenticated',      # Require authentication by default
 #     ],
 # }
+import plant_api.verify_firebase
