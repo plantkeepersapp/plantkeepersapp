@@ -50,7 +50,7 @@ export default function Profile() {
                     <View style={styles.infoRow}>
                         <Text style={styles.label}>Password:</Text>
                         {emailSendingStage ?
-                            <Text style={styles.resetSent}>{emailSendingStage == 'sending' ? 'Sending...' : 'Email sent.'}</Text>
+                            <Text style={styles.value}>{emailSendingStage == 'sending' ? 'Sending...' : 'Email sent.'}</Text>
                             :
                             <Text style={styles.reset} onPress={passwordReset}>Reset</Text>
                         }
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     },
     card: {
         width: '100%',
-        backgroundColor: '#f9f9f9',
+        backgroundColor: '#2e2e2e',
         padding: 24,
         borderRadius: 12,
         elevation: 2,
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         color: '#666',
     },
-    value: { color: '#333' },
+    value: { color: '#555' },
     logoutButton: {
         backgroundColor: '#93C572',
         paddingVertical: 12,
@@ -130,5 +130,4 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     reset: { color: '#93C572' },
-    resetSent: { color: '#333' },
 });

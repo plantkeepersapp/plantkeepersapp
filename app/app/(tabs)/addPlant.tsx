@@ -86,10 +86,10 @@ const styles = StyleSheet.create({
     input: {
         width: '100%',
         padding: 12,
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#2e2e2e',
         borderRadius: 8,
         fontSize: 16,
-        color: '#333',
+        color: '#ffffff',
     },
     addButton: {
         backgroundColor: '#93C572',

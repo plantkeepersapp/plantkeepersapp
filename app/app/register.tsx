@@ -111,10 +111,10 @@ const styles = StyleSheet.create({
     input: {
         width: '100%',
         padding: 12,
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#2e2e2e',
         borderRadius: 8,
         fontSize: 16,
-        color: '#333',
+        color: '#ffffff',
     },
     button: {
         backgroundColor: '#93C572',
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         marginTop: 20,
     },
-    redirectText: { color: '#333' },
+    redirectText: { color: '#888' },
     loginLink: {
         color: '#1B4D2B',
         fontWeight: '600',
