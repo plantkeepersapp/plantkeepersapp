@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Dimensions, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -7,6 +7,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { usePlants } from '@/context/PlantContext';
+import { useRouter } from 'expo-router';
 
 /**
  * Represents a randomly placed leaf icon in the header.
@@ -32,6 +33,7 @@ interface Leaf {
  */
 export default function HomeScreen(): JSX.Element {
     const { plants } = usePlants();
+    const router = useRouter();
 
     /**
      * Checks if the given leaf overlaps with any existing ones.
@@ -112,17 +114,18 @@ export default function HomeScreen(): JSX.Element {
                                     const isRightColumn = (index + 1) % 2 === 0;
                                     const isOnlyOneCard = plants.length === 1;
                                     return (
-                                        <View
+                                        <TouchableOpacity
                                             key={index}
                                             style={[
                                                 styles.card,
                                                 isRightColumn && { marginRight: 0 },
                                                 isOnlyOneCard && styles.singleCardCentered,
                                             ]}
+                                            onPress={() => router.push({ pathname: '/plant', params: { id: index } })}
                                         >
                                             <Text style={styles.cardTitle}>{plant.name}</Text>
                                             <Text style={styles.cardSubtitle}>{plant.type}</Text>
-                                        </View>
+                                        </TouchableOpacity>
                                     );
                                 })}
                             </View>
@@ -142,7 +145,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
     },
     card: {
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#2e2e2e',
         padding: 16,
         borderRadius: 12,
         width: '47%',
@@ -158,10 +161,11 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 16,
         marginBottom: 4,
+        color: '#93C572',
     },
     cardSubtitle: {
         fontSize: 14,
-        color: '#666',
+        color: '#e0e0e0',
         fontStyle: 'italic',
     },
     leafHeader: {

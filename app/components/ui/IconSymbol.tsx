@@ -17,6 +17,9 @@ const MAPPING = {
     'xmark': 'close',
     'chevron.left.forwardslash.chevron.right': 'code',
     'chevron.right': 'chevron-right',
+    'trash': 'delete',
+    'pencil': 'edit',
+
 } as Partial<
   Record<
     import('expo-symbols').SymbolViewProps['name'],

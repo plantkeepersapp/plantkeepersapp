@@ -1,15 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
-interface Plant {
-  name: string;
-  type: string;
+export interface Plant {
+    name: string;
+    type: string;
+    waterNeeds: string;
+    lightNeeds: string;
+    careSummary: string;
 }
 
 interface PlantContextType {
-  plants: Plant[];
-  addPlant: (plant: Plant) => Promise<void>;
-  refreshPlants: () => Promise<void>;
+    plants: Plant[];
+    addPlant: (plant: Plant) => Promise<void>;
+    deletePlant: (index: number) => Promise<void>;
+    refreshPlants: () => Promise<void>;
 }
 
 const PlantContext = createContext<PlantContextType | undefined>(undefined);
@@ -40,12 +44,22 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
         }
     };
 
+    const deletePlant = async (index: number) => {
+        try {
+            const updatedPlants = plants.filter((_, i) => i != index);
+            await AsyncStorage.setItem('plants', JSON.stringify(updatedPlants));
+            setPlants(updatedPlants);
+        } catch (error) {
+            console.error('Failed to delete plant:', error);
+        }
+    };
+
     useEffect(() => {
         loadPlants();
     }, []);
 
     return (
-        <PlantContext.Provider value={{ plants, addPlant, refreshPlants: loadPlants }}>
+        <PlantContext.Provider value={{ plants, addPlant, deletePlant, refreshPlants: loadPlants }}>
             {children}
         </PlantContext.Provider>
     );

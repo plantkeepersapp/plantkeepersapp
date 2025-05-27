@@ -1,6 +1,6 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { usePlants } from '@/context/PlantContext';
+import { Plant, usePlants } from '@/context/PlantContext';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
@@ -18,9 +18,14 @@ export default function AddPlantForm(): JSX.Element {
 
         if (!plantName.trim() || !plantType.trim()) return;
 
-        const newPlant = {
+        const newPlant: Plant = {
             name: plantName.trim(),
             type: plantType.trim(),
+            waterNeeds: 'Water once a week, allow soil to dry between waterings.',
+            lightNeeds: 'Bright indirect sunlight, avoid harsh direct sun.',
+            careSummary: `The Fiddle Leaf Fig thrives in warm, humid environments with bright, indirect light.
+Rotate the plant periodically for even growth, and avoid overwatering.
+Wipe leaves regularly to prevent dust buildup.`,
         };
 
         await addPlant(newPlant);
