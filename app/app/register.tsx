@@ -2,6 +2,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthContext';
 import { FIREBASE_AUTH } from '@/firebase.config';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { useRouter } from 'expo-router';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
@@ -51,6 +52,61 @@ export default function Register() {
         }
     };
 
+    const errorColor = useThemeColor({}, 'error');
+    const subTextColor = useThemeColor({}, 'subText');
+    const textColor = useThemeColor({}, 'text');
+    const tintColor = useThemeColor({}, 'tint');
+    const linkColor = useThemeColor({}, 'link');
+    const inputBackground = useThemeColor({}, 'cardBackground');
+    const shadowColor = useThemeColor({}, 'shadow');
+
+    const styles = StyleSheet.create({
+        inputError: {
+            borderColor: errorColor,
+            borderWidth: 1,
+        },
+        formContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 24,
+            gap: 16,
+        },
+        input: {
+            width: '100%',
+            padding: 12,
+            backgroundColor: inputBackground,
+            borderRadius: 8,
+            fontSize: 16,
+            color: textColor,
+        },
+        button: {
+            backgroundColor: tintColor,
+            paddingVertical: 10,
+            paddingHorizontal: 50,
+            borderRadius: 999,
+            shadowColor: shadowColor,
+            shadowOpacity: 0.1,
+            shadowRadius: 6,
+            elevation: 3,
+            marginTop: 12,
+        },
+        buttonText: {
+            color: linkColor,
+            fontWeight: '600',
+            fontSize: 16,
+        },
+        loginRedirect: {
+            flexDirection: 'row',
+            marginTop: 20,
+        },
+        redirectText: { color: subTextColor },
+        loginLink: {
+            color: linkColor,
+            fontWeight: '600',
+        },
+    });
+
     return (
         <ThemedView style={styles.formContainer}>
             <ThemedText type="title">Register</ThemedText>
@@ -58,7 +114,7 @@ export default function Register() {
                 style={[styles.input, error && styles.inputError]}
                 keyboardType="email-address"
                 placeholder="Email"
-                placeholderTextColor={error ? '#FA5F55' : '#888'}
+                placeholderTextColor={error ? errorColor : subTextColor}
                 autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail}
@@ -66,7 +122,7 @@ export default function Register() {
             <TextInput
                 style={[styles.input, error && styles.inputError]}
                 placeholder="Password"
-                placeholderTextColor={error ? '#FA5F55' : '#888'}
+                placeholderTextColor={error ? errorColor : subTextColor}
                 autoCapitalize="none"
                 secureTextEntry
                 value={password}
@@ -75,7 +131,7 @@ export default function Register() {
             <TextInput
                 style={[styles.input, error && styles.inputError]}
                 placeholder="Confirm Password"
-                placeholderTextColor={error ? '#FA5F55' : '#888'}
+                placeholderTextColor={error ? errorColor : subTextColor}
                 autoCapitalize="none"
                 secureTextEntry
                 value={confirmPassword}
@@ -95,50 +151,3 @@ export default function Register() {
         </ThemedView>
     );
 }
-
-const styles = StyleSheet.create({
-    inputError: {
-        borderColor: '#FA5F55',
-        borderWidth: 1,
-    },
-    formContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 24,
-        gap: 16,
-    },
-    input: {
-        width: '100%',
-        padding: 12,
-        backgroundColor: '#2e2e2e',
-        borderRadius: 8,
-        fontSize: 16,
-        color: '#ffffff',
-    },
-    button: {
-        backgroundColor: '#93C572',
-        paddingVertical: 10,
-        paddingHorizontal: 50,
-        borderRadius: 999,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3,
-        marginTop: 12,
-    },
-    buttonText: {
-        color: '#1B4D2B',
-        fontWeight: '600',
-        fontSize: 16,
-    },
-    loginRedirect: {
-        flexDirection: 'row',
-        marginTop: 20,
-    },
-    redirectText: { color: '#888' },
-    loginLink: {
-        color: '#1B4D2B',
-        fontWeight: '600',
-    },
-});

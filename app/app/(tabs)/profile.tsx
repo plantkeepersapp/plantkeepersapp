@@ -1,10 +1,11 @@
 import { FIREBASE_AUTH } from '@/firebase.config';
 import { useRouter } from 'expo-router';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import React, { useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ThemedView } from '../../components/ThemedView';
 import { useAuth } from '../../context/AuthContext';
-import { sendPasswordResetEmail } from 'firebase/auth';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 export default function Profile() {
     const { user } = useAuth();
@@ -27,6 +28,78 @@ export default function Profile() {
             setEmailSendingStage('sent');
         }
     };
+
+    const subTextColor = useThemeColor({}, 'subText');
+    const textColor = useThemeColor({}, 'text');
+    const tintColor = useThemeColor({}, 'tint');
+    const linkColor = useThemeColor({}, 'link');
+    const elevatedBackground = useThemeColor({}, 'elevatedBackground');
+    const shadowColor = useThemeColor({}, 'shadow');
+
+    const styles = StyleSheet.create({
+        container: { flex: 1 },
+        scrollContainer: {
+            flexGrow: 1,
+            padding: 24,
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 24,
+        },
+        header: {
+            alignItems: 'center',
+            gap: 8,
+        },
+        avatar: {
+            width: 120,
+            height: 120,
+            borderRadius: 60,
+            borderWidth: 2,
+            borderColor: tintColor,
+        },
+        name: {
+            fontSize: 20,
+            fontWeight: '600',
+            color: linkColor,
+        },
+        email: {
+            fontSize: 14,
+            color: subTextColor,
+        },
+        card: {
+            width: '100%',
+            backgroundColor: elevatedBackground,
+            padding: 24,
+            borderRadius: 12,
+            elevation: 2,
+            shadowColor: shadowColor,
+            shadowOpacity: 0.06,
+            shadowRadius: 6,
+            gap: 24,
+        },
+        infoRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+        },
+        label: {
+            fontWeight: '500',
+            color: textColor,
+        },
+        value: { color: subTextColor },
+        logoutButton: {
+            backgroundColor: tintColor,
+            paddingVertical: 12,
+            paddingHorizontal: 50,
+            borderRadius: 999,
+            marginTop: 20,
+            elevation: 3,
+        },
+        logoutText: {
+            color: linkColor,
+            fontSize: 16,
+            fontWeight: '600',
+        },
+        reset: { color: tintColor },
+    });
 
     return (
         <ThemedView style={styles.container}>
@@ -66,68 +139,3 @@ export default function Profile() {
         </ThemedView>
     );
 }
-
-const styles = StyleSheet.create({
-    container: { flex: 1 },
-    scrollContainer: {
-        flexGrow: 1,
-        padding: 24,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 24,
-    },
-    header: {
-        alignItems: 'center',
-        gap: 8,
-    },
-    avatar: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        borderWidth: 2,
-        borderColor: '#93C572',
-    },
-    name: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: '#1B4D2B',
-    },
-    email: {
-        fontSize: 14,
-        color: '#555',
-    },
-    card: {
-        width: '100%',
-        backgroundColor: '#2e2e2e',
-        padding: 24,
-        borderRadius: 12,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOpacity: 0.06,
-        shadowRadius: 6,
-        gap: 24,
-    },
-    infoRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    label: {
-        fontWeight: '500',
-        color: '#666',
-    },
-    value: { color: '#555' },
-    logoutButton: {
-        backgroundColor: '#93C572',
-        paddingVertical: 12,
-        paddingHorizontal: 50,
-        borderRadius: 999,
-        marginTop: 20,
-        elevation: 3,
-    },
-    logoutText: {
-        color: '#1B4D2B',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    reset: { color: '#93C572' },
-});

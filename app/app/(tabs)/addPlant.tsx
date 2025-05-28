@@ -1,6 +1,7 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Plant, usePlants } from '@/context/PlantContext';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
@@ -37,6 +38,52 @@ Wipe leaves regularly to prevent dust buildup.`,
         router.back();
     };
 
+    const errorColor = useThemeColor({}, 'error');
+    const subTextColor = useThemeColor({}, 'subText');
+    const textColor = useThemeColor({}, 'text');
+    const tintColor = useThemeColor({}, 'tint');
+    const linkColor = useThemeColor({}, 'link');
+    const inputBackground = useThemeColor({}, 'cardBackground');
+    const shadowColor = useThemeColor({}, 'shadow');
+
+    const styles = StyleSheet.create({
+        inputError: {
+            borderColor: errorColor,
+            borderWidth: 1,
+        },
+        formContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 24,
+            gap: 16,
+        },
+        input: {
+            width: '100%',
+            padding: 12,
+            backgroundColor: inputBackground,
+            borderRadius: 8,
+            fontSize: 16,
+            color: textColor,
+        },
+        addButton: {
+            backgroundColor: tintColor,
+            paddingVertical: 10,
+            paddingHorizontal: 50,
+            borderRadius: 999,
+            shadowColor: shadowColor,
+            shadowOpacity: 0.1,
+            shadowRadius: 6,
+            elevation: 3,
+            marginTop: 12,
+        },
+        addButtonText: {
+            color: linkColor,
+            fontWeight: '600',
+            fontSize: 16,
+        },
+    });
+
     return (
         <ThemedView style={styles.formContainer}>
             <ThemedText type="subtitle">Add a new plant 🌿</ThemedText>
@@ -47,7 +94,7 @@ Wipe leaves regularly to prevent dust buildup.`,
                     attemptedSubmit && !plantName.trim() && styles.inputError,
                 ]}
                 placeholder="Plant name"
-                placeholderTextColor={attemptedSubmit && !plantName.trim() ? '#FA5F55' : '#888'}
+                placeholderTextColor={attemptedSubmit && !plantName.trim() ? errorColor : subTextColor}
                 value={plantName}
                 maxLength={30}
                 onChangeText={setPlantName}
@@ -58,7 +105,7 @@ Wipe leaves regularly to prevent dust buildup.`,
                     attemptedSubmit && !plantType.trim() && styles.inputError,
                 ]}
                 placeholder="Plant type"
-                placeholderTextColor={attemptedSubmit && !plantType.trim() ? '#FA5F55' : '#888'}
+                placeholderTextColor={attemptedSubmit && !plantType.trim() ? errorColor : subTextColor}
                 value={plantType}
                 maxLength={30}
                 onChangeText={setPlantType}
@@ -70,41 +117,3 @@ Wipe leaves regularly to prevent dust buildup.`,
         </ThemedView>
     );
 }
-
-const styles = StyleSheet.create({
-    inputError: {
-        borderColor: '#FA5F55',
-        borderWidth: 1,
-    },
-    formContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 24,
-        gap: 16,
-    },
-    input: {
-        width: '100%',
-        padding: 12,
-        backgroundColor: '#2e2e2e',
-        borderRadius: 8,
-        fontSize: 16,
-        color: '#ffffff',
-    },
-    addButton: {
-        backgroundColor: '#93C572',
-        paddingVertical: 10,
-        paddingHorizontal: 50,
-        borderRadius: 999,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3,
-        marginTop: 12,
-    },
-    addButtonText: {
-        color: '#1B4D2B',
-        fontWeight: '600',
-        fontSize: 16,
-    },
-});
