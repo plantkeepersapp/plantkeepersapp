@@ -102,7 +102,7 @@ export default function Register() {
         },
         redirectText: { color: subTextColor },
         loginLink: {
-            color: linkColor,
+            color: tintColor,
             fontWeight: '600',
         },
     });
@@ -137,14 +137,13 @@ export default function Register() {
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
             />
+            {error ? <Text style={{ color: errorColor }}>{error}</Text> : null}
             <TouchableOpacity style={styles.button} onPress={loading ? () => { } : handleRegister}>
                 <Text style={styles.buttonText}>{loading ? 'Loading' : 'Register'}</Text>
             </TouchableOpacity>
-            {error ? <Text style={{ color: 'red' }}>{error}</Text> : null}
-
             <View style={styles.loginRedirect}>
                 <Text style={styles.redirectText}>Already have an account?</Text>
-                <TouchableOpacity onPress={() => router.replace('/login')}>
+                <TouchableOpacity onPress={() => router.replace('/auth/login')}>
                     <Text style={styles.loginLink}> Login</Text>
                 </TouchableOpacity>
             </View>

@@ -28,10 +28,11 @@ export default function RootLayout() {
             <View style={{ flex: 1, backgroundColor }}>
                 <AuthProvider>
                     <PlantProvider>
-                        <Stack initialRouteName="login">
+                        <Stack initialRouteName="auth/login">
                             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                            <Stack.Screen name="login" options={{ headerShown: false }} />
-                            <Stack.Screen name="register" options={{ headerShown: false }} />
+                            <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+                            <Stack.Screen name="auth/register" options={{ headerShown: false }} />
+                            <Stack.Screen name="auth/passReset" options={{ headerShown: false }} />
                             <Stack.Screen name="plant" options={{ headerShown: false }} />
                             <Stack.Screen name="+not-found" />
                         </Stack>

@@ -4,27 +4,64 @@ import { useAuth } from '@/context/AuthContext';
 import { FIREBASE_AUTH } from '@/firebase.config';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useRouter } from 'expo-router';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-export default function Login() {
+
+export default function Register() {
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [done, setDone] = useState(false);
     const [error, setError] = useState('');
 
     const { user } = useAuth();
     const router = useRouter();
 
+    useEffect(() => {
+        if (user) {
+            router.replace('/');
+        }
+    }, [loading, user]);
+
+    const handleReset = async () => {
+        if (done) {
+            router.dismissTo('/auth/login');
+            return;
+        }
+
+        if (!email || !email.includes('@')) {
+            setDone(false);
+            setError('Please enter your email address.');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            setError('');
+            await sendPasswordResetEmail(FIREBASE_AUTH, email.trim());
+            setLoading(false);
+            setError('Reset link sent successfully.');
+            setDone(true);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const errorColor = useThemeColor({}, 'error');
-    const textColor = useThemeColor({}, 'subText');
     const subTextColor = useThemeColor({}, 'subText');
-    const inputBackground = useThemeColor({}, 'cardBackground');
+    const textColor = useThemeColor({}, 'text');
     const tintColor = useThemeColor({}, 'tint');
     const linkColor = useThemeColor({}, 'link');
+    const inputBackground = useThemeColor({}, 'cardBackground');
     const shadowColor = useThemeColor({}, 'shadow');
 
     const styles = StyleSheet.create({
+        inputError: {
+            borderColor: errorColor,
+            borderWidth: 1,
+        },
         formContainer: {
             flex: 1,
             justifyContent: 'center',
@@ -37,7 +74,6 @@ export default function Login() {
             padding: 12,
             backgroundColor: inputBackground,
             borderRadius: 8,
-            borderWidth: 1,
             fontSize: 16,
             color: textColor,
         },
@@ -63,63 +99,36 @@ export default function Login() {
         },
         redirectText: { color: subTextColor },
         loginLink: {
-            color: linkColor,
+            color: tintColor,
             fontWeight: '600',
         },
     });
 
-    useEffect(() => {
-        if (user) {
-            router.replace('/');
-        }
-    }, [loading, user]);
-
-    const handleLogin = async () => {
-        try {
-            setLoading(true);
-            await signInWithEmailAndPassword(FIREBASE_AUTH, email.trim(), password);
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     return (
         <ThemedView style={styles.formContainer}>
-            <ThemedText type="title">Login</ThemedText>
+            <ThemedText type="title">Reset password</ThemedText>
             <TextInput
-                style={[
-                    styles.input,
-                    error && { borderColor: errorColor },
-                ]}
+                style={[styles.input, error && !done && styles.inputError]}
                 keyboardType="email-address"
                 placeholder="Email"
                 placeholderTextColor={error ? errorColor : subTextColor}
                 autoCapitalize="none"
                 value={email}
-                onChangeText={setEmail} />
-            <TextInput
-                style={[
-                    styles.input,
-                    error && { borderColor: errorColor },
-                ]}
-                placeholder="Password"
-                placeholderTextColor={error ? errorColor : subTextColor}
-                autoCapitalize="none"
-                value={password}
-                secureTextEntry
-                onChangeText={setPassword}
+                onChangeText={setEmail}
             />
-            <TouchableOpacity style={styles.button} onPress={loading ? () => { } : handleLogin}>
-                <Text style={styles.buttonText}>{loading ? 'Loading' : 'Login'}</Text>
+            {error ? <Text style={{ color: done ? tintColor : errorColor }}>{error}</Text> : null}
+            <TouchableOpacity style={styles.button} onPress={loading ? () => { } : handleReset}>
+                <Text style={styles.buttonText}>{loading ? 'Loading' : done ? 'Back to login' : 'Reset'}</Text>
             </TouchableOpacity>
-            {error ? <Text style={{ color: 'red' }}>{error}</Text> : null}
 
             <View style={styles.loginRedirect}>
-                <Text style={styles.redirectText}>Don't have an account?</Text>
-                <TouchableOpacity onPress={() => router.replace('/register')}>
-                    <Text style={styles.loginLink}> Register</Text>
+                <Text style={styles.redirectText}>Back to </Text>
+                <TouchableOpacity onPress={() => router.dismissTo('/auth/login')}>
+                    <Text style={styles.loginLink}>Login</Text>
+                </TouchableOpacity>
+                <Text style={styles.redirectText}> or </Text>
+                <TouchableOpacity onPress={() => router.dismissTo('/auth/register')}>
+                    <Text style={styles.loginLink}>Register</Text>
                 </TouchableOpacity>
             </View>
         </ThemedView>

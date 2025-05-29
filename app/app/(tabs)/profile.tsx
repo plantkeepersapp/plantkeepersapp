@@ -15,7 +15,7 @@ export default function Profile() {
     const handleLogout = async () => {
         try {
             await FIREBASE_AUTH.signOut();
-            router.replace('/login');
+            router.replace('/auth/login');
         } catch (error) {
             Alert.alert('Logout Error', 'Something went wrong during logout.');
         }
