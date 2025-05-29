@@ -1,6 +1,12 @@
-django
+Django
 djangorestframework
-python-dotenv
-openai
 django-cors-headers
+firebase-admin
+openai
 gunicorn
+whitenoise
+psycopg2-binary
+python-dotenv
+requests
+python-dateutil
+google-cloud-storage

@@ -8,42 +8,39 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to Cloud Run
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
-      with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
-        export_default_credentials: true
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
 
-    - name: Authorize Docker push
-      run: gcloud auth configure-docker
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-    - name: Enable required APIs
-      run: |
-        gcloud services enable cloudbuild.googleapis.com
-        gcloud services enable run.googleapis.com
-        gcloud services enable artifactregistry.googleapis.com
+      - name: Enable required APIs
+        run: |
+          gcloud services enable cloudbuild.googleapis.com
+          gcloud services enable run.googleapis.com
+          gcloud services enable artifactregistry.googleapis.com
+      - name: Build and deploy backend
+        working-directory: ./backend
+        run: |
+          gcloud builds submit --config=cloudbuild.yaml .
 
-    - name: Build and deploy backend
-      working-directory: ./backend
-      run: |
-        gcloud builds submit --config=cloudbuild.yaml .
+      - name: Get deployment URL
+        id: deploy-url
+        run: |
+          SERVICE_URL=$(gcloud run services describe plantkeepers-backend --format="value(status.url)")
+          echo "SERVICE_URL=$SERVICE_URL" >> $GITHUB_ENV
+          echo "Deployed to: $SERVICE_URL"
 
-    - name: Get deployment URL
-      id: deploy-url
-      run: |
-        SERVICE_URL=$(gcloud run services describe plantkeepers-backend --format="value(status.url)")
-        echo "SERVICE_URL=$SERVICE_URL" >> $GITHUB_ENV
-        echo "Deployed to: $SERVICE_URL"
-
-    - name: Update Status
-      run: |
-        echo "Backend successfully deployed to ${{ env.SERVICE_URL }}"
-        echo "Remember to update ApiConfig.ts with: ${{ env.SERVICE_URL }}/api"
+      - name: Update Status
+        run: |
+          echo "Backend successfully deployed to ${{ env.SERVICE_URL }}"
+          echo "Remember to update ApiConfig.ts with: ${{ env.SERVICE_URL }}/api"
