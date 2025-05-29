@@ -3,8 +3,8 @@ import { useRouter } from 'expo-router';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import React, { useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ThemedView } from '../../components/ThemedView';
-import { useAuth } from '../../context/AuthContext';
+import { ThemedView } from '@/components/ThemedView';
+import { useAuth } from '@/context/AuthContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
 export default function Profile() {
