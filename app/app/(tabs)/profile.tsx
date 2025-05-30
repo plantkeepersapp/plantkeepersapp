@@ -2,14 +2,18 @@ import { FIREBASE_AUTH } from '@/firebase.config';
 import { useRouter } from 'expo-router';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import React, { useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { usePlants } from '@/context/PlantContext';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function Profile() {
     const { user } = useAuth();
     const router = useRouter();
+    const [showTimePicker, setShowTimePicker] = useState(false);
+    const { notificationTime, setNotificationTime } = usePlants();
     const [emailSendingStage, setEmailSendingStage] = useState('');
 
     const handleLogout = async () => {
@@ -128,7 +132,32 @@ export default function Profile() {
                             <Text style={styles.reset} onPress={passwordReset}>Reset</Text>
                         }
                     </View>
-                    {/* Add more fields here later if needed */}
+                    <View style={styles.infoRow}>
+                        <Text style={styles.label}>Notification Time:</Text>
+                        <TouchableOpacity onPress={() => setShowTimePicker(true)}>
+                            <Text style={styles.reset}>
+                                {notificationTime.hour.toString().padStart(2, '0')}:
+                                {notificationTime.minute.toString().padStart(2, '0')}
+                            </Text>
+                        </TouchableOpacity>
+                        {showTimePicker && (
+                            <DateTimePicker
+                                value={new Date(2000, 0, 1, notificationTime.hour, notificationTime.minute)}
+                                mode="time"
+                                is24Hour
+                                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                onChange={(_, selectedDate) => {
+                                    setShowTimePicker(false);
+                                    if (selectedDate) {
+                                        setNotificationTime({
+                                            hour: selectedDate.getHours(),
+                                            minute: selectedDate.getMinutes(),
+                                        });
+                                    }
+                                }}
+                            />
+                        )}
+                    </View>
                 </View>
 
                 {/* Logout Button */}
