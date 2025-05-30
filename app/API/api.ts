@@ -6,7 +6,7 @@ const BASE_URL = 'http://localhost:8000/api';
 const apiFetch = async (
     endpoint: string,
     options: RequestInit = {},
-    includeAuth: boolean = true
+    includeAuth: boolean = true,
 ) => {
     let headers: Record<string, string> = {
         'Content-Type': 'application/json',

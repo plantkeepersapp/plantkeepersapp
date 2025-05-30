@@ -9,7 +9,5 @@ export const createPlant = async (plant: Plant) => {
 };
 
 export const getPlants = async () => {
-    return apiFetch('/plants/', {
-        method: 'GET',
-    });
+    return apiFetch('/plants/', { method: 'GET' });
 };

@@ -7,6 +7,8 @@ export interface Plant {
     waterNeeds: string;
     lightNeeds: string;
     careSummary: string;
+    nextWatering?: string;
+    wateringFrequency?: number;
 }
 
 interface PlantContextType {
@@ -14,6 +16,8 @@ interface PlantContextType {
     addPlant: (plant: Plant) => Promise<void>;
     deletePlant: (index: number) => Promise<void>;
     refreshPlants: () => Promise<void>;
+    setNextWatering: (index: number, date: Date) => Promise<void>;
+    setWateringFrequency: (index: number, frequency: number) => Promise<void>;
 }
 
 const PlantContext = createContext<PlantContextType | undefined>(undefined);
@@ -54,12 +58,36 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
         }
     };
 
+    const setNextWatering = async (index: number, date: Date) => {
+        try {
+            const updatedPlants = plants.map((plant, i) =>
+                i === index ? { ...plant, nextWatering: date.toISOString() } : plant,
+            );
+            await AsyncStorage.setItem('plants', JSON.stringify(updatedPlants));
+            setPlants(updatedPlants);
+        } catch (error) {
+            console.error('Failed to set next watering:', error);
+        }
+    };
+
+    const setWateringFrequency = async (index: number, frequency: number) => {
+        try {
+            const updatedPlants = plants.map((plant, i) =>
+                i === index ? { ...plant, wateringFrequency: frequency } : plant,
+            );
+            await AsyncStorage.setItem('plants', JSON.stringify(updatedPlants));
+            setPlants(updatedPlants);
+        } catch (error) {
+            console.error('Failed to set watering frequency:', error);
+        }
+    };
+
     useEffect(() => {
         loadPlants();
     }, []);
 
     return (
-        <PlantContext.Provider value={{ plants, addPlant, deletePlant, refreshPlants: loadPlants }}>
+        <PlantContext.Provider value={{ plants, addPlant, deletePlant, refreshPlants: loadPlants, setNextWatering, setWateringFrequency }}>
             {children}
         </PlantContext.Provider>
     );

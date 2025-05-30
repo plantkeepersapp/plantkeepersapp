@@ -19,6 +19,12 @@ const MAPPING = {
     'chevron.right': 'chevron-right',
     'trash': 'delete',
     'pencil': 'edit',
+    'gear': 'settings',
+    'arrowtriangle.down.fill': 'arrow-drop-down',
+    'arrowtriangle.up.fill': 'arrow-drop-up',
+    'calendar': 'event',
+    'drop.fill': 'water-drop',
+    'timer.circle': 'timer',
 
 } as Partial<
   Record<
