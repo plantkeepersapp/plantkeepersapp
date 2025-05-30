@@ -10,3 +10,4 @@ python-dotenv
 requests
 python-dateutil
 google-cloud-storage
+coreapi

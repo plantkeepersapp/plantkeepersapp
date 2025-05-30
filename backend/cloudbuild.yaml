@@ -14,11 +14,13 @@ steps:
   - 'plantkeepers-backend'
   - '--image'
   - 'gcr.io/$PROJECT_ID/plantkeepers-backend:latest'
-  - '--region'
-  - 'us-central1'
+  - '--region' 
+  - 'europe-west1' 
   - '--platform'
   - 'managed'
   - '--allow-unauthenticated'
+  - '--port'
+  - '8000'
 
 images:
 - 'gcr.io/$PROJECT_ID/plantkeepers-backend:latest'
