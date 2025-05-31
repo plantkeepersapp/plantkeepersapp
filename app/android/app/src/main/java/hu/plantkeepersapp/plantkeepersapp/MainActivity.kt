@@ -1,4 +1,4 @@
-package com.anonymous.plantkeepersapp
+package hu.plantkeepersapp.plantkeepersapp
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
