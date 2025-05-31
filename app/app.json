@@ -1,5 +1,6 @@
 {
   "expo": {
+    "owner": "plantkeepersapp",
     "name": "plantkeepersapp",
     "slug": "plantkeepersapp",
     "version": "1.0.0",
