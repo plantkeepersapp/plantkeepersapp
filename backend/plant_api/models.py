@@ -12,6 +12,7 @@ class Plant(models.Model):
     image_url = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    UID = models.CharField(max_length=500, null=True, help_text="Unique identifier for the User")
 
     def __str__(self):
         return self.name

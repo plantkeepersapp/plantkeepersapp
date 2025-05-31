@@ -44,6 +44,45 @@ class PlantViewSet(viewsets.ModelViewSet):
     """
     queryset = Plant.objects.all()
     serializer_class = PlantSerializer
+
+    def perform_create(self, serializer):
+        uid = getattr(self.request, 'firebase_user', {}).get('uid')
+        if not uid:
+            raise Exception("UID not found in Firebase token.")
+        serializer.save(UID=uid)
+
+    def create(self, request, *args, **kwargs):
+        """
+        Override create to include Firebase UID and generate PlantCare.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        uid = getattr(request, 'firebase_user', {}).get('uid')
+        if not uid:
+            return Response({'error': 'UID not found in Firebase token'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Save the plant
+        plant = serializer.save(UID=uid)
+
+        # Try to generate PlantCare
+        try:
+            plant_name = plant.name
+            care_summary = PlantCareAI.generate_plant_care_summary(plant_name)
+            print(f"Generated care summary for {plant_name}: {care_summary}")
+            PlantCare.objects.create(
+                    plant=plant,
+                    water_frequency=int(care_summary.get('water_frequency', 7)),
+                    light_requirements=care_summary.get('light_needs', ''),
+                    humidity_level=care_summary.get('humidity_needs', ''),
+                    soil_type=care_summary.get('soil_needs', ''),
+                    care_summary=care_summary.get('summary', '')
+                )
+        except:
+            print("Hello")
+
+        return Response(self.get_serializer(plant).data, status=status.HTTP_201_CREATED)
+
     
     def retrieve(self, request, *args, **kwargs):
         """
@@ -84,7 +123,7 @@ class PlantViewSet(viewsets.ModelViewSet):
                 # Create plant care info
                 PlantCare.objects.create(
                     plant=instance,
-                    water_frequency=7,  # Default to weekly
+                    water_frequency=int(care_summary.get('water_frequency', 7)),  # Default to weekly
                     light_requirements=care_summary.get('light_needs', ''),
                     humidity_level=care_summary.get('humidity_needs', ''),
                     soil_type=care_summary.get('soil_needs', ''),
@@ -128,7 +167,7 @@ class PlantViewSet(viewsets.ModelViewSet):
             # Create plant care info
             PlantCare.objects.create(
                 plant=plant,
-                water_frequency=7,
+                water_frequency=int(care_summary.get('water_frequency', 7)),
                 light_requirements=care_summary.get('light_needs', ''),
                 care_summary=care_summary.get('summary', '')
             )
@@ -712,6 +751,7 @@ class PlantCareAI:
             "plant_name": "Common name of the plant",
             "scientific_name": "Scientific name if available",
             "watering_needs": "Brief description of watering frequency and amount",
+            "water_frequency": return only an integer representing the watering frequency in days",
             "light_needs": "Brief description of light requirements",
             "summary": "A brief 2-3 sentence overview of general care",
             "tips": ["Tip 1", "Tip 2", "Tip 3"] (List of 3-5 important care tips)
@@ -944,17 +984,18 @@ class UserPlantViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows users to view or edit their plants.
     """
-    queryset = UserPlant.objects.all()
-    serializer_class = UserPlantSerializer
+    queryset = Plant.objects.all()
+    serializer_class = PlantSerializer
 
     def list(self, request, *args, **kwargs):
-        user_id = request.query_params.get('user_id', None)
-        if user_id is not None:
-            # Filter the queryset by user_id if provided
-            queryset = UserPlant.objects.filter(user_id=user_id)
+        uid = getattr(self.request, 'firebase_user', {}).get('uid')
+        print(f"User ID from request: {uid}")
+        if uid is not None:
+        #     # Filter the queryset by user_id if provided
+            queryset = Plant.objects.filter(UID=uid)
         else:
             # If no user_id is provided, return all records
-            queryset = UserPlant.objects.all()
+            queryset = Plant.objects.all()
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
