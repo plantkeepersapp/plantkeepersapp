@@ -3,6 +3,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthContext';
 import { FIREBASE_AUTH } from '@/firebase.config';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { SchedulableTriggerInputTypes, scheduleNotificationAsync } from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
@@ -83,6 +84,17 @@ export default function Login() {
         try {
             setLoading(true);
             await signInWithEmailAndPassword(FIREBASE_AUTH, email.trim(), password);
+            await scheduleNotificationAsync({
+                content: {
+                    title: 'Welcome!',
+                    body: 'Don\'t forget to water your plants today.',
+                    sound: true,
+                },
+                trigger: {
+                    type: SchedulableTriggerInputTypes.DATE,
+                    date: new Date().getTime() + 3000,
+                },
+            });
         } catch (err: any) {
             setError(err.message);
         } finally {

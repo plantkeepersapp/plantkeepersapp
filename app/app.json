@@ -16,7 +16,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.plantkeepersapp"
+      "package": "hu.plantkeepersapp.plantkeepersapp"
     },
     "web": {
       "bundler": "metro",
@@ -37,6 +37,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "d0618be6-8817-4457-ba2e-3f53aa35336b"
+      }
     }
   }
 }

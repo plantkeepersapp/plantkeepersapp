@@ -86,9 +86,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.anonymous.plantkeepersapp'
+    namespace 'hu.plantkeepersapp.plantkeepersapp'
     defaultConfig {
-        applicationId 'com.anonymous.plantkeepersapp'
+        applicationId 'hu.plantkeepersapp.plantkeepersapp'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

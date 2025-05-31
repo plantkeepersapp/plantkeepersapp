@@ -1,4 +1,4 @@
-package com.anonymous.plantkeepersapp
+package hu.plantkeepersapp.plantkeepersapp
 
 import android.app.Application
 import android.content.res.Configuration
