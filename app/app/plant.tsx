@@ -3,6 +3,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { usePlants } from '@/context/PlantContext';
+import { useNotification } from '@/context/NotificationContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -20,6 +21,7 @@ function getDaysLeft(nextWatering: Date) {
 
 export default function PlantSummary() {
     const { id } = useLocalSearchParams();
+    const { notificationTime } = useNotification();
     const [showDropAnim, setShowDropAnim] = useState(false);
     const [showWaterSettings, setShowWaterSettings] = useState(false);
     const { plants, deletePlant, setNextWatering, setWateringFrequency } = usePlants();
@@ -340,10 +342,23 @@ export default function PlantSummary() {
                         <Text style={styles.cardTitle}>💧 Water Needs</Text>
                     </View>
                     <Text style={styles.cardContent}>
-                        Water every {wateringFrequency} day{wateringFrequency == 1 ? ', ' : 's, '}
+                        Water every {wateringFrequency == 1 ? 'day, ' : wateringFrequency + ' days, '}
                         {nextWatering === 0
-                            ? 'water today!'
-                            : `${nextWatering} day${nextWatering === 1 ? '' : 's'} left until next watering.`}
+                            ? (
+                                (() => {
+                                    const now = new Date();
+                                    if (
+                                        now.getHours() > notificationTime.hour ||
+                                        (now.getHours() === notificationTime.hour && now.getMinutes() >= notificationTime.minute)
+                                    ) {
+                                        return 'water tomorrow!';
+                                    }
+                                    return 'water today!';
+                                })()
+                            )
+                            : nextWatering === 1
+                                ? 'water tomorrow!'
+                                : `${nextWatering} days left until next watering.`}
                     </Text>
                 </View>
 

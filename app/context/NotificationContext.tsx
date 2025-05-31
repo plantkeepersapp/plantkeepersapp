@@ -16,7 +16,6 @@ interface NotificationContextType {
 }
 
 const DEFAULT_NOTIFICATION_TIME: NotificationTime = { hour: 18, minute: 0 };
-const NOTIFICATION_PREFIX = 'aggregated_notification_';
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
@@ -40,35 +39,24 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         await AsyncStorage.setItem('notificationTime', JSON.stringify(time));
     };
 
-    const clearAllAggregatedNotifications = async () => {
-        const keys = await AsyncStorage.getAllKeys();
-        const relevantKeys = keys.filter(k => k.startsWith(NOTIFICATION_PREFIX));
-
-        for (const key of relevantKeys) {
-            try {
-                const id = await AsyncStorage.getItem(key);
-                if (id) {
-                    await Notifications.cancelScheduledNotificationAsync(id);
-                    await AsyncStorage.removeItem(key);
-                }
-            } catch (err) {
-                console.warn(`Failed to cancel notification ${key}:`, err);
-            }
-        }
-    };
-
     const scheduleAggregatedNotificationIfNeeded = async (plants: Plant[]) => {
-        await clearAllAggregatedNotifications();
+        await Notifications.cancelAllScheduledNotificationsAsync();
 
         const plantsByDate = new Map<string, Plant[]>();
         const now = new Date();
 
         for (const plant of plants) {
-            if (plant.nextWatering == null || plant.nextWatering < 0) continue;
+            if (plant.nextWatering == null) continue;
 
-            const targetDate = new Date(now);
-            targetDate.setDate(now.getDate() + plant.nextWatering);
-            targetDate.setHours(notificationTime.hour, notificationTime.minute, 0, 0);
+            const targetDate = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                now.getDate() + plant.nextWatering,
+                notificationTime.hour,
+                notificationTime.minute,
+                0,
+                0,
+            );
 
             const isToday = plant.nextWatering === 0;
             const notificationHasPassedToday = isToday && (
@@ -80,7 +68,13 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
                 targetDate.setDate(targetDate.getDate() + 1);
             }
 
-            const dateKey = targetDate.toISOString().split('T')[0];
+            if (targetDate <= now) {
+                targetDate.setDate(targetDate.getDate() + 1);
+            }
+
+            const dateKey = targetDate.getFullYear() + '-' +
+                String(targetDate.getMonth() + 1).padStart(2, '0') + '-' +
+                String(targetDate.getDate()).padStart(2, '0');
 
             if (!plantsByDate.has(dateKey)) {
                 plantsByDate.set(dateKey, []);
@@ -94,22 +88,21 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             const triggerDate = new Date(year, month - 1, day, notificationTime.hour, notificationTime.minute);
 
             const plantNames = dayPlants.map(p => p.name).join(', ');
-            const key = `${NOTIFICATION_PREFIX}${dateKey}`;
 
-            const id = await Notifications.scheduleNotificationAsync({
+            await Notifications.scheduleNotificationAsync({
                 content: {
                     title: 'Time to water your plants!',
                     body: `The following need water: ${plantNames}`,
                     sound: true,
                 },
-                trigger: triggerDate as any,
+                trigger: {
+                    type: 'date',
+                    date: triggerDate,
+                } as any,
             });
-
-            await AsyncStorage.setItem(key, id);
         }
 
         const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-        console.log('Updated scheduled notifications:', scheduled);
     };
 
     return (

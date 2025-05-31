@@ -28,7 +28,7 @@ export const PlantProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         scheduleAggregatedNotificationIfNeeded(plants);
-    }, [plants]);
+    }, [plants, setPlants]);
 
     const loadPlants = async () => {
         try {

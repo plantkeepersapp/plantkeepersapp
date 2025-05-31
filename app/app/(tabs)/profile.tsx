@@ -1,7 +1,7 @@
 import { FIREBASE_AUTH } from '@/firebase.config';
 import { useRouter } from 'expo-router';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthContext';
@@ -17,6 +17,10 @@ export default function Profile() {
     const { notificationTime, setNotificationTime, scheduleAggregatedNotificationIfNeeded } = useNotification();
     const { plants } = usePlants();
     const [emailSendingStage, setEmailSendingStage] = useState('');
+
+    useEffect(() => {
+        scheduleAggregatedNotificationIfNeeded(plants);
+    }, [notificationTime, setNotificationTime]);
 
     const handleLogout = async () => {
         try {
@@ -155,7 +159,6 @@ export default function Profile() {
                                             hour: selectedDate.getHours(),
                                             minute: selectedDate.getMinutes(),
                                         });
-                                        scheduleAggregatedNotificationIfNeeded(plants);
                                     }
                                 }}
                             />
