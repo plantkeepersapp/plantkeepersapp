@@ -1,5 +1,6 @@
 from django.http import JsonResponse
 from firebase_admin import auth
+import re
 
 class FirebaseAuthMiddleware:
     def __init__(self, get_response):
@@ -9,15 +10,16 @@ class FirebaseAuthMiddleware:
             '/',  # Exactly root path
             '/api/',  # API root path
             '/api/health/',
-            '/api-docs/',
+            '/api-docs/.*',
         ]
 
     def __call__(self, request):
         path = request.path
 
         # Use exact match for exempted paths
-        if path in self.exempt_paths:
-            return self.get_response(request)
+        for exempt_path in self.exempt_paths:
+            if re.fullmatch(exempt_path, path):
+                return self.get_response(request)
 
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
         if not auth_header.startswith('Bearer '):
