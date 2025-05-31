@@ -9,6 +9,7 @@ import 'react-native-reanimated';
 import { AuthProvider } from '@/context/AuthContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { PlantProvider } from '@/context/PlantContext';
+import { NotificationProvider } from '@/context/NotificationContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AndroidImportance, setNotificationChannelAsync, setNotificationHandler } from 'expo-notifications';
 import { useEffect } from 'react';
@@ -53,16 +54,18 @@ export default function RootLayout() {
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <View style={{ flex: 1, backgroundColor }}>
                 <AuthProvider>
-                    <PlantProvider>
-                        <Stack initialRouteName="auth/login">
-                            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                            <Stack.Screen name="auth/login" options={{ headerShown: false }} />
-                            <Stack.Screen name="auth/register" options={{ headerShown: false }} />
-                            <Stack.Screen name="auth/passReset" options={{ headerShown: false }} />
-                            <Stack.Screen name="plant" options={{ headerShown: false }} />
-                            <Stack.Screen name="+not-found" />
-                        </Stack>
-                    </PlantProvider>
+                    <NotificationProvider>
+                        <PlantProvider>
+                            <Stack initialRouteName="auth/login">
+                                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                                <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+                                <Stack.Screen name="auth/register" options={{ headerShown: false }} />
+                                <Stack.Screen name="auth/passReset" options={{ headerShown: false }} />
+                                <Stack.Screen name="plant" options={{ headerShown: false }} />
+                                <Stack.Screen name="+not-found" />
+                            </Stack>
+                        </PlantProvider>
+                    </NotificationProvider>
                 </AuthProvider>
                 <StatusBar style="auto" />
             </View>

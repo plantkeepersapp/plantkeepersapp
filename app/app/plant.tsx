@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Platform, Modal } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { FallingDrops } from '@/components/FallingDrops';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { usePlants } from '@/context/PlantContext';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { usePlants } from '@/context/PlantContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { FallingDrops } from '@/components/FallingDrops';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 function getDaysLeft(nextWatering: Date) {
     const today = new Date();
@@ -26,14 +26,11 @@ export default function PlantSummary() {
 
     const plantId = parseInt(id.toString());
     const plant = plants[plantId];
-
-    const [nextWatering, setNextWateringState] = useState<Date>(
-        plant.nextWatering ? new Date(plant.nextWatering) : new Date(),
-    );
+    const nextWatering = plant.nextWatering;
     const [showPicker, setShowPicker] = useState(false);
 
     const [wateringFrequency, setWateringFrequencyState] = useState<number>(
-        plant.wateringFrequency ?? 7,
+        plant.wateringFrequency,
     );
     const [showFreqInput, setShowFreqInput] = useState(false);
 
@@ -46,18 +43,14 @@ export default function PlantSummary() {
 
     const handleWaterToday = async () => {
         setShowDropAnim(true);
-        const newDate = new Date();
-        newDate.setDate(newDate.getDate() + wateringFrequency);
-        setNextWateringState(newDate);
-        await setNextWatering(plantId, newDate);
+        await setNextWatering(plantId, wateringFrequency);
     };
 
-    const handleSetWateringDate = async (event: any, selectedDate?: Date) => {
-        setShowPicker(false);
+    const handleSetWateringDate = async (_: any, selectedDate?: Date) => {
         if (selectedDate) {
-            setNextWateringState(selectedDate);
-            await setNextWatering(plantId, selectedDate);
+            await setNextWatering(plantId, getDaysLeft(selectedDate));
         }
+        setShowPicker(false);
     };
 
     const cardBackground = useThemeColor({}, 'cardBackground');
@@ -210,8 +203,8 @@ export default function PlantSummary() {
                 <View style={styles.titleContainer}>
                     <ThemedText type="title">{plant.name}</ThemedText>
                     <View style={styles.iconRow}>
-                        <TouchableOpacity onPress={() => console.log('Edit')} style={styles.iconButton}>
-                            <IconSymbol name="pencil" size={30} color={tintColor} />
+                        <TouchableOpacity onPress={() => setShowWaterSettings(true)} style={styles.iconButton}>
+                            <IconSymbol name="gear" size={24} color={tintColor} />
                         </TouchableOpacity>
                         <TouchableOpacity onPress={handleDelete} style={styles.iconButton}>
                             <IconSymbol name="trash" size={30} color={errorColor} />
@@ -308,7 +301,7 @@ export default function PlantSummary() {
                         </View>
                         {showPicker && (
                             <DateTimePicker
-                                value={nextWatering}
+                                value={new Date()}
                                 mode="date"
                                 display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                                 onChange={handleSetWateringDate}
@@ -326,14 +319,12 @@ export default function PlantSummary() {
                 <View style={styles.infoCard}>
                     <View style={styles.titleContainer}>
                         <Text style={styles.cardTitle}>💧 Water Needs</Text>
-                        <TouchableOpacity onPress={() => setShowWaterSettings(true)} style={styles.settingsButton}>
-                            <IconSymbol name="gear" size={24} color={tintColor} />
-                        </TouchableOpacity>
                     </View>
-                    <Text style={styles.cardContent}>{plant.waterNeeds}</Text>
-                    <Text style={{ color: subTextColor, marginTop: 8 }}>
-                        Watering frequency: every {wateringFrequency} day{wateringFrequency !== 1 ? 's, ' : ', '}
-                        {getDaysLeft(nextWatering)} day{getDaysLeft(nextWatering) == 1 ? '' : 's'} left
+                    <Text style={styles.cardContent}>
+                        Water every {wateringFrequency} day{wateringFrequency == 1 ? ', ' : 's, '}
+                        {nextWatering === 0
+                            ? 'water today!'
+                            : `${nextWatering} day${nextWatering === 1 ? '' : 's'} left until next watering.`}
                     </Text>
                 </View>
 

@@ -1,21 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNotification } from '@/context/NotificationContext';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
 
 export interface Plant {
     name: string;
     type: string;
-    waterNeeds: string;
     lightNeeds: string;
     careSummary: string;
-    nextWatering?: string;
-    wateringFrequency?: number;
-}
-
-interface NotificationTime {
-    hour: number;
-    minute: number;
+    nextWatering: number;
+    wateringFrequency: number;
 }
 
 interface PlantContextType {
@@ -23,80 +16,26 @@ interface PlantContextType {
     addPlant: (plant: Plant) => Promise<void>;
     deletePlant: (index: number) => Promise<void>;
     refreshPlants: () => Promise<void>;
-    setNextWatering: (index: number, date: Date) => Promise<void>;
+    setNextWatering: (index: number, daysLeft: number) => Promise<void>;
     setWateringFrequency: (index: number, frequency: number) => Promise<void>;
-    notificationTime: NotificationTime;
-    setNotificationTime: (time: NotificationTime) => Promise<void>;
 }
-
-const DEFAULT_NOTIFICATION_TIME = { hour: 18, minute: 0 };
 
 const PlantContext = createContext<PlantContextType | undefined>(undefined);
 
-export const PlantProvider = ({ children }: { children: ReactNode; }) => {
+export const PlantProvider = ({ children }: { children: ReactNode }) => {
     const [plants, setPlants] = useState<Plant[]>([]);
-    const [notificationTime, setNotificationTimeState] = useState<NotificationTime>(DEFAULT_NOTIFICATION_TIME);
+    const { scheduleAggregatedNotificationIfNeeded } = useNotification();
 
     useEffect(() => {
-        (async () => {
-            if (Platform.OS !== 'web') {
-                await Notifications.requestPermissionsAsync();
-            }
-            const stored = await AsyncStorage.getItem('notificationTime');
-            if (stored) setNotificationTimeState(JSON.parse(stored));
-        })();
-    }, []);
-
-    const setNotificationTime = async (time: NotificationTime) => {
-        setNotificationTimeState(time);
-        await AsyncStorage.setItem('notificationTime', JSON.stringify(time));
-        plants.forEach((plant, i) => scheduleWateringNotification(plant, i, time));
-    };
-
-    const scheduleWateringNotification = async (
-        plant: Plant,
-        index: number,
-        notifTime: NotificationTime = notificationTime,
-    ) => {
-        if (!plant.nextWatering) return;
-
-        const nextWateringDate = new Date(plant.nextWatering);
-        nextWateringDate.setHours(notifTime.hour, notifTime.minute, 0, 0);
-
-        const notificationIdKey = `plant_notification_${index}`;
-        const prevId = await AsyncStorage.getItem(notificationIdKey);
-        if (prevId) {
-            try {
-                await Notifications.cancelScheduledNotificationAsync(prevId);
-            } catch { }
-        }
-
-        if (nextWateringDate > new Date()) {
-            const id = await Notifications.scheduleNotificationAsync({
-                content: {
-                    title: `Time to water ${plant.name}!`,
-                    body: `Don't forget to water your ${plant.type} today.`,
-                    sound: true,
-                },
-                trigger: {
-                    hour: notifTime.hour,
-                    minute: notifTime.minute,
-                    repeats: false,
-                } as any,
-            });
-            await AsyncStorage.setItem(notificationIdKey, id);
-        }
-    };
+        scheduleAggregatedNotificationIfNeeded(plants);
+    }, [plants]);
 
     const loadPlants = async () => {
         try {
             const data = await AsyncStorage.getItem('plants');
             if (data) {
-                const loadedPlants = JSON.parse(data);
+                const loadedPlants: Plant[] = JSON.parse(data);
                 setPlants(loadedPlants);
-                loadedPlants.forEach((plant: Plant, i: number) => {
-                    scheduleWateringNotification(plant, i);
-                });
             } else {
                 setPlants([]);
             }
@@ -117,7 +56,7 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
 
     const deletePlant = async (index: number) => {
         try {
-            const updatedPlants = plants.filter((_, i) => i != index);
+            const updatedPlants = plants.filter((_, i) => i !== index);
             await AsyncStorage.setItem('plants', JSON.stringify(updatedPlants));
             setPlants(updatedPlants);
         } catch (error) {
@@ -125,16 +64,14 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
         }
     };
 
-    const setNextWatering = async (index: number, date: Date) => {
+    const setNextWatering = async (index: number, daysLeft: number) => {
         try {
             const updatedPlants = plants.map((plant, i) =>
-                i === index ? { ...plant, nextWatering: date.toISOString() } : plant,
+                i === index ? { ...plant, nextWatering: daysLeft } : plant,
             );
+
             await AsyncStorage.setItem('plants', JSON.stringify(updatedPlants));
             setPlants(updatedPlants);
-
-            // Schedule notification for this plant
-            await scheduleWateringNotification(updatedPlants[index], index, notificationTime);
         } catch (error) {
             console.error('Failed to set next watering:', error);
         }
@@ -157,16 +94,16 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
     }, []);
 
     return (
-        <PlantContext.Provider value={{
-            plants,
-            addPlant,
-            deletePlant,
-            refreshPlants: loadPlants,
-            setNextWatering,
-            setWateringFrequency,
-            notificationTime,
-            setNotificationTime,
-        }}>
+        <PlantContext.Provider
+            value={{
+                plants,
+                addPlant,
+                deletePlant,
+                refreshPlants: loadPlants,
+                setNextWatering,
+                setWateringFrequency,
+            }}
+        >
             {children}
         </PlantContext.Provider>
     );

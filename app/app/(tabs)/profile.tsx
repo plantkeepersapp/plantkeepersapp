@@ -6,6 +6,7 @@ import { Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity,
 import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useNotification } from '@/context/NotificationContext';
 import { usePlants } from '@/context/PlantContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -13,7 +14,8 @@ export default function Profile() {
     const { user } = useAuth();
     const router = useRouter();
     const [showTimePicker, setShowTimePicker] = useState(false);
-    const { notificationTime, setNotificationTime } = usePlants();
+    const { notificationTime, setNotificationTime, scheduleAggregatedNotificationIfNeeded } = useNotification();
+    const { plants } = usePlants();
     const [emailSendingStage, setEmailSendingStage] = useState('');
 
     const handleLogout = async () => {
@@ -153,6 +155,7 @@ export default function Profile() {
                                             hour: selectedDate.getHours(),
                                             minute: selectedDate.getMinutes(),
                                         });
+                                        scheduleAggregatedNotificationIfNeeded(plants);
                                     }
                                 }}
                             />
