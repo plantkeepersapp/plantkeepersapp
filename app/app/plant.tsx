@@ -120,12 +120,16 @@ export default function PlantSummary() {
         header: { marginBottom: 16 },
         titleContainer: {
             flexDirection: 'row',
-            justifyContent: 'space-between',
             alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            width: '100%',
+            minWidth: 0,
         },
         iconRow: {
             flexDirection: 'row',
             gap: 12,
+            flexShrink: 0,
         },
         iconButton: {
             padding: 6,
@@ -201,7 +205,23 @@ export default function PlantSummary() {
         <ThemedView style={styles.container}>
             <View style={styles.header}>
                 <View style={styles.titleContainer}>
-                    <ThemedText type="title">{plant.name}</ThemedText>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                        <ThemedText
+                            type="title"
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                            style={{ fontSize: 22 }}
+                        >
+                            {plant.name}
+                        </ThemedText>
+                        <Text
+                            style={[styles.subtitle, { fontSize: 16 }]}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                        >
+                            {plant.type}
+                        </Text>
+                    </View>
                     <View style={styles.iconRow}>
                         <TouchableOpacity onPress={() => setShowWaterSettings(true)} style={styles.iconButton}>
                             <IconSymbol name="gear" size={24} color={tintColor} />
@@ -211,7 +231,6 @@ export default function PlantSummary() {
                         </TouchableOpacity>
                     </View>
                 </View>
-                <Text style={styles.subtitle}>{plant.type}</Text>
             </View>
             <Modal
                 animationType="slide"
