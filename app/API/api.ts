@@ -6,7 +6,7 @@ const expoHostUri = Constants.expoConfig?.hostUri;
 // Extract IP part only
 const expoIp = expoHostUri?.split(':')[0] || 'localhost';
 
-const BASE_URL = process.env.API_BASE_URL || `http://${expoIp}:8000/api`;
+const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || `http://${expoIp}:8000/api`;
 
 const apiFetch = async (
     endpoint: string,

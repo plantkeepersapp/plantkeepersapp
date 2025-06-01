@@ -12,7 +12,13 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://plantkeepers-backend-940946965615.europe-west1.run.app/api"
+      }
     }
   },
   "submit": {
