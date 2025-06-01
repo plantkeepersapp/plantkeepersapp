@@ -60,39 +60,46 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
 
     const loadPlants = async () => {
         try {
-            const onlineData = await API.getPlants();
-            if (onlineData) {
-                // Set initial values for nextWatering and wateringFrequency if missing
-                const loadedPlants: Plant[] = onlineData.map((plant: Plant) => {
-                    const freq = plant.care?.water_frequency ?? 7;
-                    return {
-                        ...plant,
-                        wateringFrequency: plant.wateringFrequency ?? freq,
-                        nextWatering: plant.nextWatering ?? freq,
+            const [onlineData, offlineDataRaw] = await Promise.all([
+                API.getPlants(),
+                AsyncStorage.getItem('plants'),
+            ]);
+
+            let localOverrides: Record<number, Partial<Plant>> = {};
+            if (offlineDataRaw) {
+                const parsed = JSON.parse(offlineDataRaw) as Plant[];
+                localOverrides = parsed.reduce((acc, plant) => {
+                    acc[plant.id] = {
+                        wateringFrequency: plant.wateringFrequency,
+                        nextWatering: plant.nextWatering,
                     };
-                });
-                setPlants(loadedPlants);
+                    return acc;
+                }, {} as Record<number, Partial<Plant>>);
             }
+
+            const mergedPlants: Plant[] = onlineData.map((plant: Plant) => {
+                const freq = plant.care?.water_frequency ?? 7;
+                const local = localOverrides[plant.id] || {};
+
+                return {
+                    ...plant,
+                    wateringFrequency: local.wateringFrequency ?? freq,
+                    nextWatering: local.nextWatering ?? freq,
+                };
+            });
+
+            setPlants(mergedPlants);
         } catch (err) {
-            console.error(err);
-            console.warn('Using offline data');
+            console.error('Failed to load from API, trying offline:', err);
             try {
                 const offlineData = await AsyncStorage.getItem('plants');
                 if (offlineData) {
-                    const loadedPlants: Plant[] = JSON.parse(offlineData).map((plant: Plant) => {
-                        const freq = plant.care?.water_frequency ?? 7;
-                        return {
-                            ...plant,
-                            wateringFrequency: plant.wateringFrequency ?? freq,
-                            nextWatering: plant.nextWatering ?? freq,
-                        };
-                    });
-                    setPlants(loadedPlants);
+                    setPlants(JSON.parse(offlineData));
                 } else {
                     setPlants([]);
                 }
             } catch (error) {
-                console.error('Failed to load plants:', error);
+                console.error('Failed to load offline plants:', error);
             }
         }
     };
