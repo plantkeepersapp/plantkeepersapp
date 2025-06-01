@@ -87,6 +87,7 @@ export default function AddPlantForm(): JSX.Element {
     const tintColor = useThemeColor({}, 'tint');
     const linkColor = useThemeColor({}, 'link');
     const inputBackground = useThemeColor({}, 'cardBackground');
+    const elevatedBackground = useThemeColor({}, 'elevatedBackground');
     const shadowColor = useThemeColor({}, 'shadow');
 
     const styles = StyleSheet.create({
@@ -151,7 +152,7 @@ export default function AddPlantForm(): JSX.Element {
             justifyContent: 'flex-end',
         },
         modalContent: {
-            backgroundColor: inputBackground,
+            backgroundColor: elevatedBackground,
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,
             padding: 24,
@@ -213,7 +214,7 @@ export default function AddPlantForm(): JSX.Element {
                                     keyExtractor={item => item.id.toString()}
                                     renderItem={({ item }) => (
                                         <Pressable
-                                            style={styles.pickerWrapper}
+                                            style={[styles.pickerWrapper, { backgroundColor: elevatedBackground }]}
                                             onPress={() => {
                                                 setPlantCareId(item.id);
                                                 setModalVisible(false);
@@ -227,10 +228,10 @@ export default function AddPlantForm(): JSX.Element {
                                 />
                                 <KeyboardAvoidingView style={styles.buttonRow}>
                                     <TouchableOpacity
-                                        style={[styles.addButton, { marginTop: 16 }]}
+                                        style={[styles.addButton, { marginTop: 16, backgroundColor: inputBackground }]}
                                         onPress={() => setModalVisible(false)}
                                     >
-                                        <Text style={styles.addButtonText}>Cancel</Text>
+                                        <Text style={[styles.addButtonText, { color: textColor }]}>Cancel</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         style={[styles.addButton, { marginTop: 16 }]}

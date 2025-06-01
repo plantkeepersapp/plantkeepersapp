@@ -24,6 +24,8 @@ export default function PlantSummary() {
     const { notificationTime } = useNotification();
     const [showDropAnim, setShowDropAnim] = useState(false);
     const [showWaterSettings, setShowWaterSettings] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
     const { plants, deletePlant, markAsWatered, setNextWatering, setWateringFrequency } = usePlants();
 
     const plantId = parseInt(id.toString());
@@ -256,8 +258,8 @@ export default function PlantSummary() {
             elevation: 3,
             alignItems: 'center',
         },
-        addButtonText: {
-            color: linkColor,
+        buttonText: {
+            color: textColor,
             fontWeight: '600',
             fontSize: 16,
         },
@@ -292,7 +294,7 @@ export default function PlantSummary() {
                         <TouchableOpacity onPress={() => setShowWaterSettings(true)} style={styles.iconButton}>
                             <IconSymbol name="gear" size={24} color={tintColor} />
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={handleDelete} style={styles.iconButton}>
+                        <TouchableOpacity onPress={() => setShowDeleteConfirm(true)} style={styles.iconButton}>
                             <IconSymbol name="trash" size={30} color={errorColor} />
                         </TouchableOpacity>
                     </View>
@@ -387,10 +389,61 @@ export default function PlantSummary() {
 
                         <View style={styles.buttonRow}>
                             <TouchableOpacity
-                                style={[styles.addButton, styles.flexButton]}
+                                style={[
+                                    styles.addButton,
+                                    styles.flexButton,
+                                    { backgroundColor: cardBackground },
+                                ]}
                                 onPress={() => setShowWaterSettings(false)}
                             >
-                                <Text style={styles.addButtonText}>Close</Text>
+                                <Text style={styles.buttonText}>Close</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </KeyboardAvoidingView>
+                </TouchableOpacity>
+            </Modal>
+            <Modal
+                animationType="slide"
+                transparent
+                visible={showDeleteConfirm}
+                onRequestClose={() => setShowDeleteConfirm(false)}
+            >
+                <TouchableOpacity
+                    activeOpacity={1}
+                    style={styles.modalOverlay}
+                >
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        style={styles.modalContainer}
+                    >
+                        <Text style={[styles.sectionTitle, { color: errorColor }]}>
+                            Delete this plant?
+                        </Text>
+                        <Text style={styles.summaryText}>
+                            This will permanently remove {plant.name} and its data. Are you sure?
+                        </Text>
+
+                        <View style={styles.buttonRow}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.addButton,
+                                    styles.flexButton,
+                                    { backgroundColor: cardBackground },
+                                ]}
+                                onPress={() => setShowDeleteConfirm(false)}
+                            >
+                                <Text style={[styles.buttonText]}>Cancel</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.addButton,
+                                    styles.flexButton,
+                                    { backgroundColor: errorColor },
+                                ]}
+                                onPress={handleDelete}
+                            >
+                                <Text style={styles.buttonText}>Delete</Text>
                             </TouchableOpacity>
                         </View>
                     </KeyboardAvoidingView>

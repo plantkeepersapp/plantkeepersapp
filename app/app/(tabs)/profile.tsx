@@ -88,11 +88,12 @@ export default function Profile() {
         },
         infoRow: {
             flexDirection: 'row',
-            justifyContent: 'space-between',
+            gap: 12,
         },
         label: {
             fontWeight: '500',
             color: textColor,
+            flex: 1,
         },
         value: { color: subTextColor },
         logoutButton: {
@@ -140,11 +141,12 @@ export default function Profile() {
                     </View>
                     <View style={styles.infoRow}>
                         <Text style={styles.label}>Notification Time:</Text>
+                        <Text style={styles.value}>
+                            {notificationTime.hour.toString().padStart(2, '0')}:
+                            {notificationTime.minute.toString().padStart(2, '0')}
+                        </Text>
                         <TouchableOpacity onPress={() => setShowTimePicker(true)}>
-                            <Text style={styles.reset}>
-                                {notificationTime.hour.toString().padStart(2, '0')}:
-                                {notificationTime.minute.toString().padStart(2, '0')}
-                            </Text>
+                            <Text style={styles.reset}>Change</Text>
                         </TouchableOpacity>
                         {showTimePicker && (
                             <DateTimePicker
