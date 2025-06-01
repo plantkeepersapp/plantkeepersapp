@@ -24,6 +24,26 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         (async () => {
+            const { status } = await Notifications.getPermissionsAsync();
+            if (status !== 'granted') {
+                const { status: newStatus } = await Notifications.requestPermissionsAsync({
+                    ios: {
+                        allowAlert: true,
+                        allowSound: true,
+                        allowBadge: true,
+                    },
+                });
+
+                if (newStatus !== 'granted') {
+                    console.warn('Notification permissions not granted');
+                    return;
+                }
+            }
+        })();
+    }, []);
+
+    useEffect(() => {
+        (async () => {
             if (Platform.OS !== 'web') {
                 await Notifications.setNotificationCategoryAsync('WATER_PLANT_CATEGORY', [
                     {
@@ -168,10 +188,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
                     categoryIdentifier: 'WATER_PLANT_CATEGORY',
                     data: { plantIds: dayPlants.map(p => p.id) },
                 },
-                trigger: {
-                    type: 'date',
-                    date: triggerDate,
-                } as any,
+                trigger: new Date(triggerDate) as any,
             });
 
         }
