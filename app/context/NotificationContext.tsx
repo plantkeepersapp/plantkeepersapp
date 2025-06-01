@@ -47,14 +47,61 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             const notificationId = response.notification.request.identifier;
             await Notifications.dismissNotificationAsync(notificationId);
 
-            if (action === 'WATERED') {
-                console.log('Plants watered!');
-            } else if (action === 'SNOOZE') {
-                console.log('Snoozing notification for 1 day...');
+            const data = response.notification.request.content.data as { plantIds?: number[] };
+            const plantIds: number[] = Array.isArray(data.plantIds) ? data.plantIds : [];
+            if (plantIds.length === 0) return;
+
+            try {
+                const stored = await AsyncStorage.getItem('plants');
+                if (!stored) return;
+
+                const allPlants: Plant[] = JSON.parse(stored);
+                const updatedPlants = allPlants.map(plant => {
+                    if (!plantIds.includes(plant.id)) return plant;
+
+                    if (action === 'WATERED') {
+                        return {
+                            ...plant,
+                            nextWatering: plant.nextWatering + (plant.wateringFrequency ?? 7),
+                        };
+                    }
+
+                    if (action === 'SNOOZE') {
+                        return {
+                            ...plant,
+                            nextWatering: plant.nextWatering + 1,
+                        };
+                    }
+
+                    return plant;
+                });
+
+                await AsyncStorage.setItem('plants', JSON.stringify(updatedPlants));
+            } catch (err) {
+                console.error('Failed to update plants after notification action:', err);
             }
         });
 
         return () => subscription.remove();
+    }, []);
+
+    useEffect(() => {
+        (async () => {
+            const storedTime = await AsyncStorage.getItem('notificationTime');
+            if (storedTime) {
+                try {
+                    const parsed = JSON.parse(storedTime);
+                    if (
+                        typeof parsed.hour === 'number' &&
+                        typeof parsed.minute === 'number'
+                    ) {
+                        setNotificationTimeState(parsed);
+                    }
+                } catch (e) {
+                    console.warn('Failed to parse stored notification time:', e);
+                }
+            }
+        })();
     }, []);
 
     const setNotificationTime = async (time: NotificationTime) => {
@@ -119,13 +166,17 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
                     body: `The following need water: ${plantNames}`,
                     sound: true,
                     categoryIdentifier: 'WATER_PLANT_CATEGORY',
+                    data: { plantIds: dayPlants.map(p => p.id) },
                 },
                 trigger: {
                     type: 'date',
                     date: triggerDate,
                 } as any,
             });
+
         }
+        const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+        console.log('Scheduled notifications:', scheduled);
     };
 
     return (
