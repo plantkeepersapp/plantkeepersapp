@@ -1,41 +1,43 @@
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { Plant, usePlants } from '@/context/PlantContext';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 
+import { createPlant, createPlantCareType, getPlantCareTypes } from '@/API/plantApi';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { PlantCareItem } from '@/context/PlantContext';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import DropdownSelect from 'react-native-input-select';
+
 export default function AddPlantForm(): JSX.Element {
-    const { addPlant } = usePlants();
     const [plantName, setPlantName] = useState('');
-    const [plantType, setPlantType] = useState('');
+    const [plantCareId, setPlantCareId] = useState('');
+    const [plantCareOptions, setPlantCareOptions] = useState<PlantCareItem[]>([]);
     const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
     const router = useRouter();
 
+    useEffect(() => {
+        const fetchCareOptions = async () => {
+            const careTypes = await getPlantCareTypes();
+            setPlantCareOptions(careTypes);
+        };
+        fetchCareOptions();
+    }, []);
+
     const handleSubmit = async () => {
         setAttemptedSubmit(true);
 
-        if (!plantName.trim() || !plantType.trim()) return;
+        if (!plantName.trim() || !plantCareId) return;
 
-        const newPlant: Plant = {
+        const newPlant = await createPlant({
             name: plantName.trim(),
-            type: plantType.trim(),
-            nextWatering: 7,
-            wateringFrequency: 7,
-            lightNeeds: 'Bright indirect sunlight, avoid harsh direct sun.',
-            careSummary: `The Fiddle Leaf Fig thrives in warm, humid environments with bright, indirect light.
-Rotate the plant periodically for even growth, and avoid overwatering.
-Wipe leaves regularly to prevent dust buildup.`,
-        };
-
-        await addPlant(newPlant);
+            plantcare_id: plantCareId,
+        });
 
         setPlantName('');
-        setPlantType('');
+        setPlantCareId('');
         setAttemptedSubmit(false);
-
         router.back();
     };
 
@@ -100,16 +102,21 @@ Wipe leaves regularly to prevent dust buildup.`,
                 maxLength={30}
                 onChangeText={setPlantName}
             />
-            <TextInput
-                style={[
-                    styles.input,
-                    attemptedSubmit && !plantType.trim() && styles.inputError,
-                ]}
-                placeholder="Plant type"
-                placeholderTextColor={attemptedSubmit && !plantType.trim() ? errorColor : subTextColor}
-                value={plantType}
-                maxLength={30}
-                onChangeText={setPlantType}
+
+            <DropdownSelect
+                label="Plant type"
+                placeholder="Select an option..."
+                options={plantCareOptions.map(plantCare => ({ label: `${plantCare.name} (${plantCare.scientific_name})`, value: plantCare.id }))
+                    .concat([{ label: 'Add new...', value: '__add__' }])}
+                selectedValue=""
+                onValueChange={value => {
+                    if (value === '__add__') {
+                        // TODO
+                    }
+                    setPlantCareId(value?.toString() || '');
+                }}
+                primaryColor={tintColor}
+                isMultiple={false}
             />
 
             <TouchableOpacity style={styles.addButton} onPress={handleSubmit}>

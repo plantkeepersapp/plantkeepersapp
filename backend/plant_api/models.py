@@ -1,27 +1,15 @@
 from django.db import models
 from django.utils import timezone
 from decimal import Decimal
-
-class Plant(models.Model):
-    """
-    Model for plant basic information.
-    """
-    name = models.CharField(max_length=255)
-    scientific_name = models.CharField(max_length=255, blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
-    image_url = models.URLField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    UID = models.CharField(max_length=500, null=True, help_text="Unique identifier for the User")
-
-    def __str__(self):
-        return self.name
+from django.db import models
 
 class PlantCare(models.Model):
     """
-    Model for plant care information.
+    Model for plant care information, describing species-level data.
     """
-    plant = models.OneToOneField(Plant, on_delete=models.CASCADE, related_name='care')
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, help_text="Common name of the plant species")
+    scientific_name = models.CharField(max_length=255, blank=True, null=True)
     water_frequency = models.IntegerField(help_text="Watering frequency in days")
     light_requirements = models.CharField(max_length=100, help_text="Light requirements (e.g., Full sun, Partial shade)")
     humidity_level = models.CharField(max_length=100, blank=True, null=True)
@@ -30,34 +18,26 @@ class PlantCare(models.Model):
     fertilizer_frequency = models.CharField(max_length=100, blank=True, null=True)
     care_summary = models.TextField(blank=True, null=True)
     last_updated = models.DateTimeField(auto_now=True)
-    
-    def __str__(self):
-        return f"Care for {self.plant.name}"
-
-class User(models.Model):
-    """
-    Model for User tracing, with enforcing the uniqueness of username and email
-    """
-    birthname = models.TextField(blank=True, null=True)
-    username = models.TextField(blank=True, null=True, unique=True)
-    email = models.EmailField(blank=True, null=True, unique=True)
-    createdat = models.DateField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.username}"
+        return self.name
 
-class UserPlant(models.Model):
+class Plant(models.Model):
     """
-    Model for tracking user's plants.
+    Model for a user's plant instance.
     """
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_plants')
-    plant = models.ForeignKey(Plant, on_delete=models.CASCADE, related_name='user_plants')
-    added = models.DateField(auto_now_add=True)
+    name = models.CharField(max_length=255, help_text="Custom name for the plant given by the user")
+    care = models.ForeignKey(PlantCare, on_delete=models.CASCADE, related_name='plants', null=True)
+    description = models.TextField(blank=True, null=True)
+    image_url = models.URLField(blank=True, null=True)
+    uid = models.CharField(max_length=500, null=True, help_text="Firebase UID to identify the user")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     last_watered = models.DateField(blank=True, null=True)
     last_fertilized = models.DateField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.user.username}'s {self.plant.name}"
+        return self.name
 
 class AdUnit(models.Model):
     """
@@ -111,7 +91,7 @@ class AdImpression(models.Model):
     device_id = models.CharField(max_length=255, blank=True, null=True)
     device_platform = models.CharField(max_length=20, default='android')
     device_model = models.CharField(max_length=100, blank=True, null=True)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='ad_impressions')
+    uid = models.CharField(max_length=500, null=True, help_text="Firebase UID to identify the user")
     estimated_revenue = models.DecimalField(max_digits=10, decimal_places=6, default=0.0)
     is_test_ad = models.BooleanField(default=True)
     metadata = models.JSONField(default=dict, blank=True, null=True)
@@ -149,26 +129,6 @@ class AdRevenue(models.Model):
     def __str__(self):
         return f"Revenue for {self.ad_unit.name} on {self.date}: ${self.revenue}"
 
-class WateringSchedule(models.Model):
-    """
-    Model for tracking user plant watering schedules.
-    """
-    user = models.ForeignKey(UserPlant, on_delete=models.CASCADE, related_name='watering_schedules')
-    last_watered = models.DateTimeField(default=timezone.now)
-    next_watering_due = models.DateTimeField()
-    is_watered = models.BooleanField(default=False)
-    
-    def __str__(self):
-        return f"Watering schedule for {self.user.plant.name}"
-    
-    def save(self, *args, **kwargs):
-        # Calculate next watering date if not explicitly set
-        if not self.next_watering_due:
-            # Get water_frequency from the plant's care info
-            water_frequency = self.user.plant.care.water_frequency if hasattr(self.user.plant, 'care') else 7
-            self.next_watering_due = self.last_watered + timezone.timedelta(days=water_frequency)
-        super().save(*args, **kwargs)
-
 class ApiUsage(models.Model):
     """
     Model for tracking API usage (OpenAI, Plant APIs, etc.)
@@ -187,13 +147,13 @@ class ActiveUser(models.Model):
     """
     Model for tracking daily active users.
     """
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activity_logs')
+    uid = models.CharField(max_length=500, null=True, help_text="Firebase UID to identify the user")
     date = models.DateField(default=timezone.now)
     last_active_time = models.DateTimeField(default=timezone.now)
     session_count = models.IntegerField(default=1)
     
     class Meta:
-        unique_together = ['user', 'date']
+        unique_together = ['uid', 'date']
         
     def __str__(self):
         return f"{self.user.username} active on {self.date}"

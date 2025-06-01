@@ -1,30 +1,44 @@
 from rest_framework import serializers
-from .models import Plant, PlantCare, WateringSchedule, AdImpression, AdClick, UserPlant, User, AdUnit, AdRevenue, ActiveUser, AdKpi
+from .models import ActiveUser, Plant, PlantCare, AdImpression, AdClick, AdUnit, AdRevenue, AdKpi
 from rest_framework.validators import UniqueValidator
 
 
 class PlantCareSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlantCare
-        # fields = ['id', 'plant', 'water_frequency', 'light_requirements', 'humidity_level', 
-        #          'temperature_range', 'soil_type', 'fertilizer_frequency', 'care_summary']
-
-        fields = ['id','water_frequency', 'light_requirements', 'care_summary']
-
+        fields = [
+            'id',
+            'name',
+            'scientific_name',
+            'water_frequency',
+            'light_requirements',
+            'humidity_level',
+            'temperature_range',
+            'soil_type',
+            'fertilizer_frequency',
+            'care_summary',
+            'last_updated',
+        ]
+        read_only_fields = ['last_updated']
 
 class PlantSerializer(serializers.ModelSerializer):
     care = PlantCareSerializer(read_only=True)
-    
+
     class Meta:
         model = Plant
-        fields = ['id', 'name', 'scientific_name', 'description', 'image_url', 'care', 'UID']
-
-class WateringScheduleSerializer(serializers.ModelSerializer):
-    plant_name = serializers.ReadOnlyField(source='plant.name')
-    
-    class Meta:
-        model = WateringSchedule
-        fields = ['id', 'plant', 'plant_name', 'last_watered', 'next_watering_due', 'is_watered']
+        fields = [
+            'id',
+            'name',
+            'description',
+            'image_url',
+            'uid',
+            'care',
+            'created_at',
+            'updated_at',
+            'last_watered',
+            'last_fertilized',
+        ]
+        read_only_fields = ['created_at', 'updated_at']
 
 class AdUnitSerializer(serializers.ModelSerializer):
     """
@@ -89,37 +103,6 @@ class PlantCareSummarySerializer(serializers.Serializer):
     summary = serializers.CharField(required=False)
     tips = serializers.ListField(child=serializers.CharField(), required=False)
 
-class UserPlantSerializer(serializers.ModelSerializer):
-    plant_name = serializers.ReadOnlyField(source='plant.name')
-    
-    class Meta:
-        model = UserPlant
-        fields = ['id', 'user', 'plant', 'plant_name', 'added', 'last_watered', 'last_fertilized']
-        read_only_fields = ['added']
-
-class UserSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(
-        required=True,
-        validators=[UniqueValidator(queryset=User.objects.all())]
-    )
-
-    email = serializers.EmailField(
-        required=False,
-        allow_null=True,
-        validators=[UniqueValidator(queryset=User.objects.all())]
-    )
-
-    class Meta:
-        model = User
-        fields = [
-            'id',
-            'birthname',   # Optional read-only field
-            'username',
-            'email',      # Optional read-only field
-            'createdat',
-        ]
-        read_only_fields = ['createdat']
-
 class ActiveUserSerializer(serializers.ModelSerializer):
     """
     Serializer for tracking daily active users.
@@ -128,7 +111,7 @@ class ActiveUserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = ActiveUser
-        fields = ['id', 'user', 'username', 'date', 'last_active_time', 'session_count']
+        fields = ['uid', 'date', 'last_active_time', 'session_count']
         read_only_fields = ['date']
 
 class AdKpiSerializer(serializers.ModelSerializer):

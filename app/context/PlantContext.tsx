@@ -1,14 +1,32 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNotification } from '@/context/NotificationContext';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { getPlants } from '@/API/plantApi';
+
+export interface PlantCareItem {
+    id: string;
+    name: string;
+    scientific_name: string;
+}
+
+export interface PlantCare extends PlantCareItem {
+    water_frequency: number;
+    light_requirements: string;
+    humidity_level: string;
+    temperature_range: string;
+    soil_type: string;
+    fertilizer_frequency: number;
+    care_summary: string;
+}
 
 export interface Plant {
     name: string;
-    type: string;
-    lightNeeds: string;
-    careSummary: string;
-    nextWatering: number;
-    wateringFrequency: number;
+    care?: PlantCare;
+    description: string;
+    image_url: string;
+    last_watered: Date;
+    last_fertilized: Date;
+    plantcare_id?: string;
 }
 
 interface PlantContextType {
@@ -22,7 +40,7 @@ interface PlantContextType {
 
 const PlantContext = createContext<PlantContextType | undefined>(undefined);
 
-export const PlantProvider = ({ children }: { children: ReactNode }) => {
+export const PlantProvider = ({ children }: { children: ReactNode; }) => {
     const [plants, setPlants] = useState<Plant[]>([]);
     const { scheduleAggregatedNotificationIfNeeded } = useNotification();
 
@@ -32,15 +50,26 @@ export const PlantProvider = ({ children }: { children: ReactNode }) => {
 
     const loadPlants = async () => {
         try {
-            const data = await AsyncStorage.getItem('plants');
-            if (data) {
-                const loadedPlants: Plant[] = JSON.parse(data);
+            const onlineData = await getPlants();
+            console.log(onlineData);
+            if (onlineData) {
+                const loadedPlants: Plant[] = JSON.parse(onlineData);
                 setPlants(loadedPlants);
-            } else {
-                setPlants([]);
             }
-        } catch (error) {
-            console.error('Failed to load plants:', error);
+        } catch (err) {
+            console.error(err);
+            console.warn('Using offline data');
+            try {
+                const offlineData = await AsyncStorage.getItem('plants');
+                if (offlineData) {
+                    const loadedPlants: Plant[] = JSON.parse(offlineData);
+                    setPlants(loadedPlants);
+                } else {
+                    setPlants([]);
+                }
+            } catch (error) {
+                console.error('Failed to load plants:', error);
+            }
         }
     };
 

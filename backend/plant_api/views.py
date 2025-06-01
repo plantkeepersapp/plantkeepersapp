@@ -16,234 +16,122 @@ from rest_framework.response import Response
 from openai import OpenAI
 
 from .models import (
-    Plant, PlantCare, WateringSchedule, AdImpression, AdClick, ApiUsage, UserPlant, User,
-    AdUnit, AdRevenue, ActiveUser, AdKpi
+    ActiveUser, Plant, PlantCare, AdImpression, AdClick, ApiUsage,
+    AdUnit, AdRevenue, AdKpi
 )
 from .serializers import (
-    PlantSerializer, PlantCareSerializer, WateringScheduleSerializer,
-    AdImpressionSerializer, AdClickSerializer, PlantCareSummarySerializer, UserPlantSerializer, 
-    UserSerializer, AdUnitSerializer, AdRevenueSerializer, ActiveUserSerializer, AdKpiSerializer
+    ActiveUserSerializer, PlantSerializer, PlantCareSerializer,
+    AdImpressionSerializer, AdClickSerializer, PlantCareSummarySerializer, 
+    AdUnitSerializer, AdRevenueSerializer, AdKpiSerializer
 )
+
 
 # Initialize logger
 logger = logging.getLogger(__name__)
 
-# Initialize OpenAI client
+# OpenAI client
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
-# Plant API configurations - using Perenual and Trefle as our two reliable plant APIs
-PERENUAL_API_KEY = os.getenv('PERENUAL_API_KEY', '')
-TREFLE_API_KEY = os.getenv('TREFLE_API_KEY', '')
-
-# AdMob configuration 
-ADMOB_CONFIG = settings.ADMOB_CONFIG
-
+# API ViewSets
 class PlantViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint for managing plants
-    """
     queryset = Plant.objects.all()
     serializer_class = PlantSerializer
 
-    def perform_create(self, serializer):
+    def get_queryset(self):
         uid = getattr(self.request, 'firebase_user', {}).get('uid')
-        if not uid:
-            raise Exception("UID not found in Firebase token.")
-        serializer.save(UID=uid)
+        return Plant.objects.filter(uid=uid)
 
     def create(self, request, *args, **kwargs):
-        """
-        Override create to include Firebase UID and generate PlantCare.
-        """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
         uid = getattr(request, 'firebase_user', {}).get('uid')
         if not uid:
             return Response({'error': 'UID not found in Firebase token'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        # Save the plant
-        plant = serializer.save(UID=uid)
+        plantcare_id = request.data.get('plantcare_id')
+        if not plantcare_id:
+            return Response({'error': 'plantcare_id is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Try to generate PlantCare
         try:
-            plant_name = plant.name
-            care_summary = PlantCareAI.generate_plant_care_summary(plant_name)
-            print(f"Generated care summary for {plant_name}: {care_summary}")
-            PlantCare.objects.create(
-                    plant=plant,
-                    water_frequency=int(care_summary.get('water_frequency', 7)),
-                    light_requirements=care_summary.get('light_needs', ''),
-                    humidity_level=care_summary.get('humidity_needs', ''),
-                    soil_type=care_summary.get('soil_needs', ''),
-                    care_summary=care_summary.get('summary', '')
-                )
-        except:
-            print("Hello")
+            plantcare = PlantCare.objects.get(id=plantcare_id)
+        except PlantCare.DoesNotExist:
+            return Response({'error': f'PlantCare with id {plantcare_id} does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
-        return Response(self.get_serializer(plant).data, status=status.HTTP_201_CREATED)
+        custom_name = request.data.get('name') or plantcare.name
 
-    
-    def retrieve(self, request, *args, **kwargs):
-        """
-        Override retrieve method to ensure plants have care information
-        """
+        plant = Plant.objects.create(
+            name=custom_name,
+            description=request.data.get('description', ''),
+            image_url=request.data.get('image_url', ''),
+            uid=uid,
+            care=plantcare
+        )
+
+        serializer = self.get_serializer(plant)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        
-        # Check if the plant has care information
-        try:
-            care = instance.care
-            if not care:
-                raise PlantCare.DoesNotExist
-        except (PlantCare.DoesNotExist, AttributeError):
-            # No care information exists, so generate it
-            plant_name = instance.name
-            print(f"Generating care info for {plant_name}")
-            
-            # Get info from external APIs
-            perenual_data = PlantInfoAPI.get_plant_info_from_perenual(plant_name)
-            trefle_data = PlantInfoAPI.get_plant_info_from_trefle(plant_name)
-            
-            # Combine data
-            combined_info = {
-                "perenual_data": perenual_data[:1] if perenual_data else [],
-                "trefle_data": trefle_data[:1] if trefle_data else []
-            }
-            print(f"Combined info: {combined_info}")
-            # Generate care summary
-            care_summary = PlantCareAI.generate_plant_care_summary(plant_name, combined_info)
-            print(f"Care summary: {care_summary}")
-            # If successful, create plant care info
-            if care_summary and 'error' not in care_summary:
-                # Update plant description if it's empty
-                if not instance.description and care_summary.get('summary'):
-                    instance.description = care_summary.get('summary')
-                    instance.save()
-                
-                # Create plant care info
-                PlantCare.objects.create(
-                    plant=instance,
-                    water_frequency=int(care_summary.get('water_frequency', 7)),  # Default to weekly
-                    light_requirements=care_summary.get('light_needs', ''),
-                    humidity_level=care_summary.get('humidity_needs', ''),
-                    soil_type=care_summary.get('soil_needs', ''),
-                    care_summary=care_summary.get('summary', '')
-                )
-                
-                # Refresh the instance to get the updated data
-                instance = self.get_object()
-        
+
+        # Rename
+        instance.name = request.data.get('name', instance.name)
+
+        # Update plantcare
+        plantcare_id = request.data.get('plantcare_id')
+        if plantcare_id:
+            try:
+                plantcare = PlantCare.objects.get(id=plantcare_id)
+                instance.care = plantcare
+            except PlantCare.DoesNotExist:
+                return Response({'error': 'Invalid plantcare_id'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Water/Fertilize
+        if request.data.get('mark_watered'):
+            instance.last_watered = now().date()
+        if request.data.get('mark_fertilized'):
+            instance.last_fertilized = now().date()
+
+        instance.save()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
-    
-    def list(self, request, *args, **kwargs):
-        """
-        Override list method to ensure all plants have care information
-        """
-        queryset = self.filter_queryset(self.get_queryset())
-        
-        # Check each plant for care information and generate if missing
-        plants_to_update = []
-        for plant in queryset:
-            try:
-                care = plant.care
-                if not care:
-                    plants_to_update.append(plant)
-            except (PlantCare.DoesNotExist, AttributeError):
-                plants_to_update.append(plant)
-        
-        # Generate care data for plants missing it
-        for plant in plants_to_update:
-            plant_name = plant.name
-            print(f"Generating care info for {plant_name} during list operation")
-            
-            care_summary = PlantCareAI.generate_plant_care_summary(plant_name)
-            
-            # Update plant info
-            if not plant.description and care_summary.get('summary'):
-                plant.description = care_summary.get('summary')
-                plant.save()
-            
-            # Create plant care info
-            PlantCare.objects.create(
-                plant=plant,
-                water_frequency=int(care_summary.get('water_frequency', 7)),
-                light_requirements=care_summary.get('light_needs', ''),
-                care_summary=care_summary.get('summary', '')
-            )
-        
-        # Now continue with standard pagination and serialization
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
 
 class PlantCareViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint for managing plant care information
-    """
     queryset = PlantCare.objects.all()
     serializer_class = PlantCareSerializer
-    
-    def create(self, request, *args, **kwargs):
-        """
-        Override create method to handle custom care generation
-        """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        # Get the plant
-        plant_id = request.data.get('plant')
-        if not plant_id:
-            return Response({"error": "Plant ID is required"}, status=status.HTTP_400_BAD_REQUEST)
-            
-        try:
-            plant = Plant.objects.get(id=plant_id)
-            
-            # Generate care summary using our AI service
-            care_summary = PlantCareAI.generate_plant_care_summary(plant.name)
-            
-            # Update serializer data with AI-generated info
-            validated_data = serializer.validated_data
-            if not validated_data.get('light_requirements') and care_summary.get('light_needs'):
-                validated_data['light_requirements'] = care_summary.get('light_needs')
-                
-            if not validated_data.get('care_summary') and care_summary.get('summary'):
-                validated_data['care_summary'] = care_summary.get('summary')
-                
-            # Set water frequency if not provided
-            if not validated_data.get('water_frequency'):
-                validated_data['water_frequency'] = 7  # Default weekly
-                
-            self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-            
-        except Plant.DoesNotExist:
-            return Response({"error": f"Plant with ID {plant_id} does not exist"}, 
-                           status=status.HTTP_404_NOT_FOUND)
-    
-    def perform_create(self, serializer):
-        serializer.save()
-
-class WateringScheduleViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint for managing watering schedules
-    """
-    queryset = WateringSchedule.objects.all()
-    serializer_class = WateringScheduleSerializer
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update({"request": self.request})
-        return context
 
     def get_queryset(self):
-        # Optional: filter schedules to only show for logged-in user
-        return WateringSchedule.objects.filter(plant__user=self.request.user)
+        if self.action == 'list':
+            return PlantCare.objects.all().only('id', 'name', 'scientific_name')
+        return super().get_queryset()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        data = [{'id': pc.id, 'name': pc.name, 'scientific_name': pc.scientific_name} for pc in queryset]
+        return Response(data)
+
+    def create(self, request, *args, **kwargs):
+        name = request.data.get('name')
+        scientific_name = request.data.get('scientific_name')
+
+        if not name and not scientific_name:
+            return Response({'error': 'Either name or scientific_name is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        search_name = scientific_name or name
+        care_summary = PlantCareAI.generate_plant_care_summary(search_name)
+
+        plantcare = PlantCare.objects.create(
+            name=name or search_name,
+            scientific_name=scientific_name,
+            water_frequency=int(care_summary.get('water_frequency', 7)),
+            light_requirements=care_summary.get('light_needs', ''),
+            humidity_level=care_summary.get('humidity_needs', ''),
+            temperature_range=care_summary.get('temperature_range', ''),
+            soil_type=care_summary.get('soil_needs', ''),
+            fertilizer_frequency=care_summary.get('fertilizer_needs', ''),
+            care_summary=care_summary.get('summary', '')
+        )
+
+        serializer = self.get_serializer(plantcare)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class AdUnitViewSet(viewsets.ModelViewSet):
     """
@@ -992,19 +880,12 @@ class UserPlantViewSet(viewsets.ModelViewSet):
         print(f"User ID from request: {uid}")
         if uid is not None:
         #     # Filter the queryset by user_id if provided
-            queryset = Plant.objects.filter(UID=uid)
+            queryset = Plant.objects.filter(uid=uid)
         else:
             # If no user_id is provided, return all records
             queryset = Plant.objects.all()
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-
-class UserViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint for managing user's plants.
-    """
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
 
 class ActiveUserViewSet(viewsets.ModelViewSet):
     """
