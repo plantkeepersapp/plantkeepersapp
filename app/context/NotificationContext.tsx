@@ -64,6 +64,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
     const scheduleAggregatedNotificationIfNeeded = async (plants: Plant[]) => {
         await Notifications.cancelAllScheduledNotificationsAsync();
+        console.log('Plants:', plants);
 
         const plantsByDate = new Map<string, Plant[]>();
         const now = new Date();

@@ -30,7 +30,8 @@ export interface Plant {
     last_watered: string | null;
     last_fertilized: string | null;
     plantcare_id?: number;
-    wateringFrequency?: number; // when overriden locally
+    wateringFrequency: number; // when overriden locally
+    nextWatering: number;
 }
 
 interface PlantContextType {
@@ -61,7 +62,15 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
         try {
             const onlineData = await API.getPlants();
             if (onlineData) {
-                const loadedPlants: Plant[] = onlineData;
+                // Set initial values for nextWatering and wateringFrequency if missing
+                const loadedPlants: Plant[] = onlineData.map((plant: Plant) => {
+                    const freq = plant.care?.water_frequency ?? 7;
+                    return {
+                        ...plant,
+                        wateringFrequency: plant.wateringFrequency ?? freq,
+                        nextWatering: plant.nextWatering ?? freq,
+                    };
+                });
                 setPlants(loadedPlants);
             }
         } catch (err) {
@@ -70,7 +79,14 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
             try {
                 const offlineData = await AsyncStorage.getItem('plants');
                 if (offlineData) {
-                    const loadedPlants: Plant[] = JSON.parse(offlineData);
+                    const loadedPlants: Plant[] = JSON.parse(offlineData).map((plant: Plant) => {
+                        const freq = plant.care?.water_frequency ?? 7;
+                        return {
+                            ...plant,
+                            wateringFrequency: plant.wateringFrequency ?? freq,
+                            nextWatering: plant.nextWatering ?? freq,
+                        };
+                    });
                     setPlants(loadedPlants);
                 } else {
                     setPlants([]);
@@ -104,12 +120,13 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
         await loadPlants();
     };
 
-    const setNextWatering = async (index: number, daysLeft: number) => {
+    const setNextWatering = async (plantId: number, daysLeft: number) => {
         try {
-            const updatedPlants = plants.map((plant, i) =>
-                i === index ? { ...plant, nextWatering: daysLeft } : plant,
+            const updatedPlants = plants.map(plant =>
+                plant.id === plantId
+                    ? { ...plant, nextWatering: daysLeft }
+                    : plant,
             );
-
             await AsyncStorage.setItem('plants', JSON.stringify(updatedPlants));
             setPlants(updatedPlants);
         } catch (error) {
@@ -117,10 +134,12 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
         }
     };
 
-    const setWateringFrequency = async (index: number, frequency: number) => {
+    const setWateringFrequency = async (plantId: number, frequency: number) => {
         try {
-            const updatedPlants = plants.map((plant, i) =>
-                i === index ? { ...plant, wateringFrequency: frequency } : plant,
+            const updatedPlants = plants.map(plant =>
+                plant.id === plantId
+                    ? { ...plant, wateringFrequency: frequency }
+                    : plant,
             );
             await AsyncStorage.setItem('plants', JSON.stringify(updatedPlants));
             setPlants(updatedPlants);

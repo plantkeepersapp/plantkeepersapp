@@ -27,15 +27,14 @@ export default function PlantSummary() {
     const { plants, deletePlant, markAsWatered, setNextWatering, setWateringFrequency } = usePlants();
 
     const plantId = parseInt(id.toString());
-
     const plant = plants.find(p => p.id == plantId);
     if (!plant) return <ThemedText>Plant not found!</ThemedText>;
 
-    const nextWateringDate = plant.last_watered ? new Date(new Date(plant.last_watered).getTime() + (plant.wateringFrequency || plant.care?.water_frequency || 7) * 24 * 60 * 60 * 1000) : new Date();
-    const nextWatering = getDaysLeft(nextWateringDate);
+    const [wateringFrequency, setWateringFrequencyState] = useState<number>(plant.wateringFrequency);
+    const [nextWatering, setNextWateringState] = useState<number>(plant.nextWatering);
+
     const [showPicker, setShowPicker] = useState(false);
 
-    const [wateringFrequency, setWateringFrequencyState] = useState<number>(plant.care?.water_frequency || 7);
     const [showFreqInput, setShowFreqInput] = useState(false);
 
     const router = useRouter();
@@ -49,11 +48,14 @@ export default function PlantSummary() {
         setShowDropAnim(true);
         await markAsWatered(plantId);
         await setNextWatering(plantId, wateringFrequency);
+        setNextWateringState(wateringFrequency);
     };
 
     const handleSetWateringDate = async (_: any, selectedDate?: Date) => {
         if (selectedDate) {
-            await setNextWatering(plantId, getDaysLeft(selectedDate));
+            const daysLeft = getDaysLeft(selectedDate);
+            await setNextWatering(plantId, daysLeft);
+            setNextWateringState(daysLeft);
         }
         setShowPicker(false);
     };
