@@ -1,10 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNotification } from '@/context/NotificationContext';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { getPlants } from '@/API/plantApi';
+import * as API from '@/API/plantApi';
+import { onAuthStateChanged } from 'firebase/auth';
+import { FIREBASE_AUTH } from '@/firebase.config';
 
 export interface PlantCareItem {
-    id: string;
+    id: number;
     name: string;
     scientific_name: string;
 }
@@ -20,20 +22,23 @@ export interface PlantCare extends PlantCareItem {
 }
 
 export interface Plant {
+    id: number;
     name: string;
     care?: PlantCare;
     description: string;
     image_url: string;
-    last_watered: Date;
-    last_fertilized: Date;
-    plantcare_id?: string;
+    last_watered: string | null;
+    last_fertilized: string | null;
+    plantcare_id?: number;
+    wateringFrequency?: number; // when overriden locally
 }
 
 interface PlantContextType {
     plants: Plant[];
-    addPlant: (plant: Plant) => Promise<void>;
+    addPlant: (plant: Partial<Plant>) => Promise<void>;
     deletePlant: (index: number) => Promise<void>;
     refreshPlants: () => Promise<void>;
+    markAsWatered: (index: number) => Promise<void>;
     setNextWatering: (index: number, daysLeft: number) => Promise<void>;
     setWateringFrequency: (index: number, frequency: number) => Promise<void>;
 }
@@ -48,12 +53,15 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
         scheduleAggregatedNotificationIfNeeded(plants);
     }, [plants, setPlants]);
 
+    useEffect(() => {
+        onAuthStateChanged(FIREBASE_AUTH, loadPlants);
+    }, []);
+
     const loadPlants = async () => {
         try {
-            const onlineData = await getPlants();
-            console.log(onlineData);
+            const onlineData = await API.getPlants();
             if (onlineData) {
-                const loadedPlants: Plant[] = JSON.parse(onlineData);
+                const loadedPlants: Plant[] = onlineData;
                 setPlants(loadedPlants);
             }
         } catch (err) {
@@ -73,11 +81,10 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
         }
     };
 
-    const addPlant = async (plant: Plant) => {
+    const addPlant = async (plant: Partial<Plant>) => {
         try {
-            const updatedPlants = [...plants, plant];
-            await AsyncStorage.setItem('plants', JSON.stringify(updatedPlants));
-            setPlants(updatedPlants);
+            await API.createPlant(plant);
+            await loadPlants();
         } catch (error) {
             console.error('Failed to add plant:', error);
         }
@@ -85,12 +92,16 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
 
     const deletePlant = async (index: number) => {
         try {
-            const updatedPlants = plants.filter((_, i) => i !== index);
-            await AsyncStorage.setItem('plants', JSON.stringify(updatedPlants));
-            setPlants(updatedPlants);
+            await API.deletePlant(index);
+            await loadPlants();
         } catch (error) {
             console.error('Failed to delete plant:', error);
         }
+    };
+
+    const markAsWatered = async (index: number) => {
+        await API.markWatered(index);
+        await loadPlants();
     };
 
     const setNextWatering = async (index: number, daysLeft: number) => {
@@ -129,6 +140,7 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
                 addPlant,
                 deletePlant,
                 refreshPlants: loadPlants,
+                markAsWatered,
                 setNextWatering,
                 setWateringFrequency,
             }}

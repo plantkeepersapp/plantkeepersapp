@@ -118,10 +118,10 @@ export default function HomeScreen(): JSX.Element {
                                                 isRightColumn && { marginRight: 0 },
                                                 isOnlyOneCard && styles.singleCardCentered,
                                             ]}
-                                            onPress={() => router.push({ pathname: '/plant', params: { id: index } })}
+                                            onPress={() => router.push({ pathname: '/plant', params: { id: plant.id } })}
                                         >
                                             <Text style={styles.cardTitle}>{plant.name}</Text>
-                                            <Text style={styles.cardSubtitle}>{plant.type}</Text>
+                                            <Text style={styles.cardSubtitle}>{plant.care?.name || '<unknown>'}</Text>
                                         </TouchableOpacity>
                                     );
                                 })}

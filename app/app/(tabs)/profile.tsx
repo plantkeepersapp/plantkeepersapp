@@ -43,7 +43,7 @@ export default function Profile() {
     const textColor = useThemeColor({}, 'text');
     const tintColor = useThemeColor({}, 'tint');
     const linkColor = useThemeColor({}, 'link');
-    const elevatedBackground = useThemeColor({}, 'elevatedBackground');
+    const cardBackground = useThemeColor({}, 'cardBackground');
     const shadowColor = useThemeColor({}, 'shadow');
 
     const styles = StyleSheet.create({
@@ -77,7 +77,7 @@ export default function Profile() {
         },
         card: {
             width: '100%',
-            backgroundColor: elevatedBackground,
+            backgroundColor: cardBackground,
             padding: 24,
             borderRadius: 12,
             elevation: 2,

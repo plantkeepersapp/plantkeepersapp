@@ -33,8 +33,8 @@ class Plant(models.Model):
     uid = models.CharField(max_length=500, null=True, help_text="Firebase UID to identify the user")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    last_watered = models.DateField(blank=True, null=True)
-    last_fertilized = models.DateField(blank=True, null=True)
+    last_watered = models.DateTimeField(blank=True, null=True)
+    last_fertilized = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return self.name

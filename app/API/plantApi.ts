@@ -27,11 +27,11 @@ export const deletePlant = async (id: number) => {
 
 // Actions: Mark as watered/fertilized now
 export const markWatered = async (id: number) => {
-    return updatePlant(id, { last_watered: new Date() });
+    return apiFetch(`/plants/${id}/`, { method: 'PUT', body: JSON.stringify({ 'mark_watered': true }) });
 };
 
 export const markFertilized = async (id: number) => {
-    return updatePlant(id, { last_fertilized: new Date() });
+    return apiFetch(`/plants/${id}/`, { method: 'PATCH' });
 };
 
 // PLANT CARE TYPES

@@ -22,8 +22,7 @@ const apiFetch = async (
         const user = FIREBASE_AUTH.currentUser;
         if (user) {
             const token = await getIdToken(user);
-            console.log(`${BASE_URL}${endpoint}`);
-            console.log(token);
+            console.debug(`API call to ${BASE_URL}${endpoint} with token ${token}`);
             headers['Authorization'] = `Bearer ${token}`;
         }
     }
@@ -38,6 +37,7 @@ const apiFetch = async (
         throw new Error(error || `Request failed: ${res.status}`);
     }
 
+    if (res.status == 204) return {};
     return res.json();
 };
 

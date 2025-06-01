@@ -85,9 +85,9 @@ class PlantViewSet(viewsets.ModelViewSet):
 
         # Water/Fertilize
         if request.data.get('mark_watered'):
-            instance.last_watered = now().date()
+            instance.last_watered = timezone.now()
         if request.data.get('mark_fertilized'):
-            instance.last_fertilized = now().date()
+            instance.last_fertilized = timezone.now()
 
         instance.save()
         serializer = self.get_serializer(instance)

@@ -8,7 +8,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 function getDaysLeft(nextWatering: Date) {
     const today = new Date();
@@ -24,16 +24,18 @@ export default function PlantSummary() {
     const { notificationTime } = useNotification();
     const [showDropAnim, setShowDropAnim] = useState(false);
     const [showWaterSettings, setShowWaterSettings] = useState(false);
-    const { plants, deletePlant, setNextWatering, setWateringFrequency } = usePlants();
+    const { plants, deletePlant, markAsWatered, setNextWatering, setWateringFrequency } = usePlants();
 
     const plantId = parseInt(id.toString());
-    const plant = plants[plantId];
-    const nextWatering = plant.nextWatering;
+
+    const plant = plants.find(p => p.id == plantId);
+    if (!plant) return <ThemedText>Plant not found!</ThemedText>;
+
+    const nextWateringDate = plant.last_watered ? new Date(new Date(plant.last_watered).getTime() + (plant.wateringFrequency || plant.care?.water_frequency || 7) * 24 * 60 * 60 * 1000) : new Date();
+    const nextWatering = getDaysLeft(nextWateringDate);
     const [showPicker, setShowPicker] = useState(false);
 
-    const [wateringFrequency, setWateringFrequencyState] = useState<number>(
-        plant.wateringFrequency,
-    );
+    const [wateringFrequency, setWateringFrequencyState] = useState<number>(plant.care?.water_frequency || 7);
     const [showFreqInput, setShowFreqInput] = useState(false);
 
     const router = useRouter();
@@ -45,6 +47,7 @@ export default function PlantSummary() {
 
     const handleWaterToday = async () => {
         setShowDropAnim(true);
+        await markAsWatered(plantId);
         await setNextWatering(plantId, wateringFrequency);
     };
 
@@ -62,6 +65,7 @@ export default function PlantSummary() {
     const subTextColor = useThemeColor({}, 'subText');
     const errorColor = useThemeColor({}, 'error');
     const shadowColor = useThemeColor({}, 'shadow');
+    const linkColor = useThemeColor({}, 'link');
 
     const styles = StyleSheet.create({
         container: {
@@ -147,43 +151,49 @@ export default function PlantSummary() {
         freqButton: {
             backgroundColor: tintColor,
             paddingVertical: 4,
-            paddingHorizontal: 14,
+            paddingHorizontal: 12,
             borderRadius: 8,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: shadowColor,
+            shadowOpacity: 0.1,
+            shadowRadius: 6,
+            elevation: 3,
+            minWidth: 36,
         },
         freqButtonText: {
-            color: '#fff',
-            fontWeight: '900',
+            color: linkColor,
+            fontWeight: '600',
+            fontSize: 20,
         },
         modalOverlay: {
             flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: 'rgba(0,0,0,0.4)',
+            justifyContent: 'flex-end',
+            backgroundColor: '#00000066',
         },
         modalContainer: {
-            width: '90%',
             backgroundColor: elevatedBackground,
-            padding: 20,
-            paddingTop: 40,
-            borderRadius: 12,
+            padding: 24,
             shadowColor: shadowColor,
             shadowOpacity: 0.2,
             shadowOffset: { width: 0, height: 2 },
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            gap: 12,
         },
         closeIcon: {
             position: 'absolute',
-            top: 5,
-            right: 5,
+            top: 8,
+            right: 8,
             padding: 3,
             zIndex: 1,
-            backgroundColor: '#333',
+            backgroundColor: cardBackground,
             borderRadius: 999,
         },
         settingsList: {
             marginTop: 12,
             gap: 12,
         },
-
         settingsItem: {
             flexDirection: 'row',
             alignItems: 'center',
@@ -194,13 +204,65 @@ export default function PlantSummary() {
             shadowColor: shadowColor,
             shadowOpacity: 0.05,
             shadowOffset: { width: 0, height: 1 },
-            gap: 12,
+            gap: 8,
         },
         settingsText: {
             fontSize: 16,
             color: textColor,
         },
-
+        freqContainer: {
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+        },
+        freqToggle: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            width: '100%',
+        },
+        freqToggleText: {
+            flex: 1,
+            marginLeft: 8,
+        },
+        freqInputRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 12,
+            marginTop: 12,
+            marginLeft: 28,
+        },
+        freqLabel: {
+            color: textColor,
+            fontSize: 16,
+        },
+        freqCount: {
+            fontSize: 16,
+            color: textColor,
+        },
+        buttonRow: {
+            flexDirection: 'row',
+            justifyContent: 'center',
+            marginTop: 16,
+        },
+        addButton: {
+            backgroundColor: tintColor,
+            paddingVertical: 10,
+            paddingHorizontal: 50,
+            borderRadius: 999,
+            shadowColor: shadowColor,
+            shadowOpacity: 0.1,
+            shadowRadius: 6,
+            elevation: 3,
+            alignItems: 'center',
+        },
+        addButtonText: {
+            color: linkColor,
+            fontWeight: '600',
+            fontSize: 16,
+        },
+        flexButton: {
+            flex: 1,
+            marginHorizontal: 4,
+        },
     });
 
     return (
@@ -221,7 +283,7 @@ export default function PlantSummary() {
                             numberOfLines={1}
                             ellipsizeMode="tail"
                         >
-                            {plant.type}
+                            {plant.care?.name || '<unknown>'}
                         </Text>
                     </View>
                     <View style={styles.iconRow}>
@@ -240,35 +302,35 @@ export default function PlantSummary() {
                 visible={showWaterSettings}
                 onRequestClose={() => setShowWaterSettings(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
+                <TouchableOpacity
+                    activeOpacity={1}
+                    style={styles.modalOverlay}
+                    // onPressOut={() => setShowWaterSettings(false)} TODO: fix
+                >
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        style={styles.modalContainer}
+                    >
                         <View style={styles.settingsList}>
                             <TouchableOpacity style={styles.settingsItem} onPress={handleWaterToday}>
                                 <IconSymbol name="drop.fill" size={20} color={tintColor} />
                                 <Text style={styles.settingsText}>Mark as Watered Today</Text>
                             </TouchableOpacity>
-                            <FallingDrops
-                                visible={showDropAnim}
-                                onEnd={() => setShowDropAnim(false)}
-                            />
+
+                            <FallingDrops visible={showDropAnim} onEnd={() => setShowDropAnim(false)} />
 
                             <TouchableOpacity style={styles.settingsItem} onPress={() => setShowPicker(true)}>
                                 <IconSymbol name="calendar" size={20} color={tintColor} />
                                 <Text style={styles.settingsText}>Set Next Watering Date</Text>
                             </TouchableOpacity>
 
-                            <View
-                                style={[
-                                    styles.settingsItem,
-                                    { flexDirection: 'column', alignItems: 'flex-start' },
-                                ]}
-                            >
+                            <View style={[styles.settingsItem, styles.freqContainer]}>
                                 <TouchableOpacity
                                     onPress={() => setShowFreqInput(!showFreqInput)}
-                                    style={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}
+                                    style={styles.freqToggle}
                                 >
                                     <IconSymbol name="timer.circle" size={20} color={tintColor} />
-                                    <Text style={[styles.settingsText, { flex: 1, marginLeft: 8 }]}>
+                                    <Text style={[styles.settingsText, styles.freqToggleText]}>
                                         Change Watering Frequency
                                     </Text>
                                     <IconSymbol
@@ -279,16 +341,8 @@ export default function PlantSummary() {
                                 </TouchableOpacity>
 
                                 {showFreqInput && (
-                                    <View
-                                        style={{
-                                            flexDirection: 'row',
-                                            alignItems: 'center',
-                                            gap: 12,
-                                            marginTop: 12,
-                                            marginLeft: 28,
-                                        }}
-                                    >
-                                        <Text style={{ color: textColor, fontSize: 16 }}>Water every</Text>
+                                    <View style={styles.freqInputRow}>
+                                        <Text style={styles.freqLabel}>Water every</Text>
 
                                         <TouchableOpacity
                                             onPress={async () => {
@@ -296,12 +350,12 @@ export default function PlantSummary() {
                                                 setWateringFrequencyState(newFreq);
                                                 await setWateringFrequency(plantId, newFreq);
                                             }}
-                                            style={[styles.freqButton, { minWidth: 36 }]}
+                                            style={[styles.freqButton]}
                                         >
                                             <Text style={styles.freqButtonText}>−</Text>
                                         </TouchableOpacity>
 
-                                        <Text style={{ fontSize: 16, color: textColor }}>
+                                        <Text style={styles.freqCount}>
                                             {wateringFrequency} day{wateringFrequency !== 1 ? 's' : ''}
                                         </Text>
 
@@ -311,15 +365,15 @@ export default function PlantSummary() {
                                                 setWateringFrequencyState(newFreq);
                                                 await setWateringFrequency(plantId, newFreq);
                                             }}
-                                            style={[styles.freqButton, { minWidth: 36 }]}
+                                            style={[styles.freqButton]}
                                         >
                                             <Text style={styles.freqButtonText}>+</Text>
                                         </TouchableOpacity>
                                     </View>
                                 )}
                             </View>
-
                         </View>
+
                         {showPicker && (
                             <DateTimePicker
                                 value={new Date()}
@@ -329,11 +383,16 @@ export default function PlantSummary() {
                             />
                         )}
 
-                        <TouchableOpacity style={styles.closeIcon} onPress={() => setShowWaterSettings(false)}>
-                            <IconSymbol name="xmark" size={28} color={'#FFFFFF'} />
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                        <View style={styles.buttonRow}>
+                            <TouchableOpacity
+                                style={[styles.addButton, styles.flexButton]}
+                                onPress={() => setShowWaterSettings(false)}
+                            >
+                                <Text style={styles.addButtonText}>Close</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </KeyboardAvoidingView>
+                </TouchableOpacity>
             </Modal>
 
             <View style={styles.cardRow}>
@@ -364,13 +423,13 @@ export default function PlantSummary() {
 
                 <View style={styles.infoCard}>
                     <Text style={styles.cardTitle}>☀️ Light Needs</Text>
-                    <Text style={styles.cardContent}>{plant.lightNeeds}</Text>
+                    <Text style={styles.cardContent}>{plant.care?.light_requirements}</Text>
                 </View>
             </View>
 
             <ScrollView style={styles.summaryContainer}>
                 <Text style={styles.sectionTitle}>Plant Care Summary</Text>
-                <Text style={styles.summaryText}>{plant.careSummary}</Text>
+                <Text style={styles.summaryText}>{plant.care?.care_summary}</Text>
             </ScrollView>
         </ThemedView>
     );
