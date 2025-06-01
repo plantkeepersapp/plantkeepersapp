@@ -425,18 +425,18 @@ export default function PlantSummary() {
 
                 <View style={styles.infoCard}>
                     <Text style={styles.cardTitle}>☀️ Light Needs</Text>
-                    <Text style={styles.cardContent}>{plant.care?.light_requirements}</Text>
+                    <Text style={styles.cardContent}>{plant.care?.light_requirements || 'unknown'}</Text>
                 </View>
             </View>
 
             <View style={styles.cardRow}>
                 <View style={styles.infoCard}>
-                    <Text style={styles.cardTitle}>🌡️Ideal temperature</Text>
-                    <Text style={styles.cardContent}>{plant.care?.temperature_range}</Text>
+                    <Text style={styles.cardTitle}>🌡️ Ideal Temperature</Text>
+                    <Text style={styles.cardContent}>{plant.care?.temperature_range || 'unknown'}</Text>
                 </View>
                 <View style={styles.infoCard}>
-                    <Text style={styles.cardTitle}>💦Humidity Needs</Text>
-                    <Text style={styles.cardContent}>{plant.care?.humidity_level}</Text>
+                    <Text style={styles.cardTitle}>💦 Humidity Needs</Text>
+                    <Text style={styles.cardContent}>{plant.care?.humidity_level || 'unknown'}</Text>
                 </View>
             </View>
 
