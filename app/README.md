@@ -48,3 +48,47 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Build android app
+
+We build using eas on the eas servers. Make sure you have eas installed:
+
+```powershell
+npm install -g eas-cli
+```
+
+And authenticate with an account having access to the project:
+
+```powershell
+eas login
+```
+
+### Prerequesites
+
+To do builds, first make sure that the eas environment variables are set so that the build root is the app directory, not the repository root.
+
+This is very important, otherwise the whole repo would be uploaded, including the backend and secrets. To prevent this, there is an easignore file in the repository root, so an empty archive is uploaded instead.
+
+For example, in powershell:
+
+```powershell
+cd app # if not already in the app directory
+$env:EAS_NO_VCS=1
+$env:EAS_PROJECT_ROOT=$pwd
+```
+
+### Dev build
+
+Dev build uses the locally running node app to show the components, making real time updates possible. Unless configured otherwise, it requires the backend to run on the expo host machine, listening on 0.0.0.0 port 8000, allowed through firewall.
+
+```powershell
+eas build --platform android --profile development
+```
+
+### Production build
+
+Creates a release apk as a fully functional app. By default uses the deployed API on Google Cloud.
+
+```powershell
+eas build --platform android --profile development
+```
