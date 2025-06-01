@@ -55,7 +55,14 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
     }, [plants, setPlants]);
 
     useEffect(() => {
-        onAuthStateChanged(FIREBASE_AUTH, loadPlants);
+        const unsubscribe = onAuthStateChanged(FIREBASE_AUTH, user => {
+            if (user) {
+                loadPlants();
+            } else {
+                console.log('No user authenticated yet.');
+            }
+        });
+        return unsubscribe;
     }, []);
 
     const loadPlants = async () => {
@@ -154,10 +161,6 @@ export const PlantProvider = ({ children }: { children: ReactNode; }) => {
             console.error('Failed to set watering frequency:', error);
         }
     };
-
-    useEffect(() => {
-        loadPlants();
-    }, []);
 
     return (
         <PlantContext.Provider
