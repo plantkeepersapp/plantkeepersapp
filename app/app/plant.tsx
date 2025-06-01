@@ -84,7 +84,7 @@ export default function PlantSummary() {
             flexDirection: 'row',
             justifyContent: 'space-between',
             gap: 12,
-            marginBottom: 24,
+            marginBottom: 12,
         },
         infoCard: {
             flex: 1,
@@ -307,7 +307,7 @@ export default function PlantSummary() {
                 <TouchableOpacity
                     activeOpacity={1}
                     style={styles.modalOverlay}
-                    // onPressOut={() => setShowWaterSettings(false)} TODO: fix
+                // onPressOut={() => setShowWaterSettings(false)} TODO: fix
                 >
                     <KeyboardAvoidingView
                         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -426,6 +426,17 @@ export default function PlantSummary() {
                 <View style={styles.infoCard}>
                     <Text style={styles.cardTitle}>☀️ Light Needs</Text>
                     <Text style={styles.cardContent}>{plant.care?.light_requirements}</Text>
+                </View>
+            </View>
+
+            <View style={styles.cardRow}>
+                <View style={styles.infoCard}>
+                    <Text style={styles.cardTitle}>🌡️Ideal temperature</Text>
+                    <Text style={styles.cardContent}>{plant.care?.temperature_range}</Text>
+                </View>
+                <View style={styles.infoCard}>
+                    <Text style={styles.cardTitle}>💦Humidity Needs</Text>
+                    <Text style={styles.cardContent}>{plant.care?.humidity_level}</Text>
                 </View>
             </View>
 

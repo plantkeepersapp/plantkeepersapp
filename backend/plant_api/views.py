@@ -120,7 +120,7 @@ class PlantCareViewSet(viewsets.ModelViewSet):
 
         plantcare = PlantCare.objects.create(
             name=name or search_name,
-            scientific_name=scientific_name,
+            scientific_name=care_summary.get('scientific_name', scientific_name),
             water_frequency=int(care_summary.get('water_frequency', 7)),
             light_requirements=care_summary.get('light_needs', ''),
             humidity_level=care_summary.get('humidity_needs', ''),
@@ -641,7 +641,9 @@ class PlantCareAI:
             "watering_needs": "Brief description of watering frequency and amount",
             "water_frequency": return only an integer representing the watering frequency in days",
             "light_needs": "Brief description of light requirements",
-            "summary": "A brief 2-3 sentence overview of general care",
+            "humidity_needs": "Brief description of humidity requirements",
+            "temperature_range": "Ideal temperature range for the plant in Celsius / same range in Fahrenheit",
+            "summary": "Start with ⚠️ Toxic to [...] if the plant is toxic to pets or humans. Follow by a brief 2-3 sentence overview of general care",
             "tips": ["Tip 1", "Tip 2", "Tip 3"] (List of 3-5 important care tips)
         }}
         
@@ -736,7 +738,6 @@ class PlantCareView(views.APIView):
             plant, created = Plant.objects.update_or_create(
                 name=care_summary.get('plant_name', plant_name),
                 defaults={
-                    'scientific_name': care_summary.get('scientific_name', ''),
                     'description': care_summary.get('summary', '')
                 }
             )
@@ -745,6 +746,7 @@ class PlantCareView(views.APIView):
             PlantCare.objects.update_or_create(
                 plant=plant,
                 defaults={
+                    'scientific_name': care_summary.get('scientific_name', ''),
                     'water_frequency': 7,  # Default to weekly unless specified
                     'light_requirements': care_summary.get('light_needs', 'Medium light'),
                     'care_summary': care_summary.get('summary', '')
