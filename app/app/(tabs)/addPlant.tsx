@@ -247,14 +247,14 @@ export default function AddPlantForm(): JSX.Element {
                         ) : (
                             <>
                                 <TextInput
-                                    style={[styles.input, attemptedCreate && !newTypeName.trim() && styles.inputError]}
+                                    style={[styles.input, { backgroundColor: elevatedBackground }, attemptedCreate && !newTypeName.trim() && styles.inputError]}
                                     placeholder="Plant type name"
                                     placeholderTextColor={subTextColor}
                                     value={newTypeName}
                                     onChangeText={setNewTypeName}
                                 />
                                 <TextInput
-                                    style={styles.input}
+                                    style={[styles.input, { backgroundColor: elevatedBackground }]}
                                     placeholder="Scientific name (optional)"
                                     placeholderTextColor={subTextColor}
                                     value={newTypeScientificName}
@@ -265,14 +265,14 @@ export default function AddPlantForm(): JSX.Element {
                                 ) : (
                                     <KeyboardAvoidingView style={styles.buttonRow}>
                                         <TouchableOpacity
-                                            style={[styles.addButton, styles.flexButton]}
+                                            style={[styles.addButton, styles.flexButton, { backgroundColor: inputBackground }]}
                                             onPress={() => {
                                                 setAddingNewType(false);
                                                 setNewTypeName('');
                                                 setNewTypeScientificName('');
                                             }}
                                         >
-                                            <Text style={styles.addButtonText}>Back</Text>
+                                            <Text style={[styles.addButtonText, { color: textColor }]}>Back</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={[styles.addButton, styles.flexButton]}
