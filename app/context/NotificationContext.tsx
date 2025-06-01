@@ -25,13 +25,36 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         (async () => {
             if (Platform.OS !== 'web') {
-                await Notifications.requestPermissionsAsync();
-            }
-            const stored = await AsyncStorage.getItem('notificationTime');
-            if (stored) {
-                setNotificationTimeState(JSON.parse(stored));
+                await Notifications.setNotificationCategoryAsync('WATER_PLANT_CATEGORY', [
+                    {
+                        identifier: 'WATERED',
+                        buttonTitle: 'Watered',
+                        options: { isDestructive: false, opensAppToForeground: true },
+                    },
+                    {
+                        identifier: 'SNOOZE',
+                        buttonTitle: 'Remind me tomorrow',
+                        options: { isDestructive: false, opensAppToForeground: true },
+                    },
+                ]);
             }
         })();
+    }, []);
+
+    useEffect(() => {
+        const subscription = Notifications.addNotificationResponseReceivedListener(async response => {
+            const action = response.actionIdentifier;
+            const notificationId = response.notification.request.identifier;
+            await Notifications.dismissNotificationAsync(notificationId);
+
+            if (action === 'WATERED') {
+                console.log('Plants watered!');
+            } else if (action === 'SNOOZE') {
+                console.log('Snoozing notification for 1 day...');
+            }
+        });
+
+        return () => subscription.remove();
     }, []);
 
     const setNotificationTime = async (time: NotificationTime) => {
@@ -94,6 +117,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
                     title: 'Time to water your plants!',
                     body: `The following need water: ${plantNames}`,
                     sound: true,
+                    categoryIdentifier: 'WATER_PLANT_CATEGORY',
                 },
                 trigger: {
                     type: 'date',
@@ -101,8 +125,6 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
                 } as any,
             });
         }
-
-        const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     };
 
     return (
